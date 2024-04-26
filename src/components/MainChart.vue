@@ -61,11 +61,9 @@
 <script>
 import vegaEmbed from 'vega-embed'
 import { defineComponent, toRaw } from 'vue';
-import { MainStore } from "../store/app";
-import { mapStores } from 'pinia';
 import carbon101 from "../models/carbon101";
 import googlechartsTheme from "../models/googlecharts";
-
+import tweets from "../data/all_tweets_with_sentiment.json"
 export default defineComponent({
   name: 'MainChart',
   props: {
@@ -74,11 +72,11 @@ export default defineComponent({
   watch: {
     theme: function() { // watch it
         console.log(googlechartsTheme)
-        vegaEmbed('#vis', toRaw(this.yourVlSpec), {"actions": false, config: this.theme=='darkTheme'? carbon101 : googlechartsTheme })
+        this.embed()
     },
     timeModel: function() {
       this.yourVlSpec.vconcat[0].encoding.x.timeUnit.step = this.timeModel
-      vegaEmbed('#vis', toRaw(this.yourVlSpec), {"actions": false, config: this.theme=='darkTheme'? carbon101 : googlechartsTheme })
+      this.embed()
     }
   },
   data() {
@@ -88,6 +86,7 @@ export default defineComponent({
       chartModel: 'bar',
       chartTypes: ['bar', 'area', 'line'],
       timeModel: 1,
+      data: tweets,
       yourVlSpec: {
         $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
         description: 'A simple bar chart with embedded data.',
@@ -98,7 +97,25 @@ export default defineComponent({
           {
             width: window.innerWidth/2 - 100,
             height: window.innerHeight/2 - 50,
-            mark: {type: 'bar', point: false, cornerRadiusEnd: 4, tooltip: true},
+            mark: {
+              type: 'bar',
+              point: true,
+              cornerRadiusEnd: 4,
+              tooltip: true,
+            },
+            selection: {
+              series: {
+                type: "multi",
+                toggle: true,
+                encodings: ["color"],
+                on: "dbclick",
+                bind: "legend",
+              },
+              paintbrush: {
+                type: "point",
+                on: "pointerover",
+              }
+            },
             transform: [{filter: {param: "date"}}],
             encoding: {
               x: {
@@ -112,15 +129,24 @@ export default defineComponent({
                 field: 'value', type: 'quantitative', title: '# of Tweets',
                 // stack: 'center'
               },
+              opacity: {
+                condition: {selection: "series", value: 1},
+                value: 0.2
+              },
               order: {field: 'sentiment', type: "nominal", legend: []},
               color: {
-                field: 'sentiment',
-                type: "nominal",
-                scale: {
-                  // scheme: 'category10',
+                // field: 'sentiment',
+                // type: "nominal",
+                condition:{
+                  field: "sentiment", type: "nominal",
+                  param: 'paintbrush',
                 },
+                value: 'grey',
+                // scale: {
+                  // scheme: 'category10',
+                // },
                 title: 'Sentiment',
-              }
+              },
             }
           },
           {
@@ -205,32 +231,83 @@ export default defineComponent({
     }
   },
   async created() {
-    vegaEmbed('#vis', toRaw(this.yourVlSpec), {"actions": false, config: this.theme=='darkTheme'? carbon101 : googlechartsTheme })
+    this.embed()
   },
   methods: {
+    embed(){
+      vegaEmbed('#vis',
+                toRaw(this.yourVlSpec),
+                {"actions": false, config: this.theme=='darkTheme'? carbon101 : googlechartsTheme }
+              ).then(result => {
+                    result.view.addEventListener('click', function(event, item) {
+                      var clicked = Object.keys(item.datum).map(function(key) {
+                        return item.datum[key];
+                      })
+                      console.log(clicked)
+                    });
+                }).catch(console.warn);
+    },
+    openDialog(event) {
+      console.log(event)
+    },
+    parseData(min = 15){
+      var new_data = [];
+      this.data.forEach(element1 => {
+        if (element1.lang != 'all'){
+          if (element1.total < min){
+            var pos = new_data.findIndex((element) => element.lang == 'other' && element.created_at == element1.created_at && element.sentiment=='positive')
+            var neg = new_data.findIndex((element) => element.lang == 'other' && element.created_at == element1.created_at && element.sentiment=='negative')
+            var neutral = new_data.findIndex((element) => element.lang == 'other' && element.created_at == element1.created_at && element.sentiment=='neutral')
+            if (pos == -1){
+              new_data.push({created_at: element1.created_at, sentiment: 'positive', lang: 'other', value: element1.positive})
+            }else{
+              new_data[pos] = {created_at: element1.created_at, sentiment: 'positive', lang: 'other', value: element1.positive + new_data[pos].value}
+            }
+            if (neg == -1){
+              new_data.push({created_at: element1.created_at, sentiment: 'negative', lang: 'other', value: element1.negative})
+            }else{
+              new_data[neg] = {created_at: element1.created_at, sentiment: 'negative', lang: 'other', value: element1.negative + new_data[neg].value}
+            }
+            if (neutral == -1){
+              new_data.push({created_at: element1.created_at, sentiment: 'neutral', lang: 'other', value: element1.neutral})
+            }else{
+              new_data[neutral] = {created_at: element1.created_at, sentiment: 'neutral', lang: 'other', value: element1.neutral + new_data[neutral].value}
+            }
+          }else{
+            new_data.push({created_at: element1.created_at, sentiment: 'negative', lang: element1.lang, value: element1.negative})
+            new_data.push({created_at: element1.created_at, sentiment: 'neutral', lang: element1.lang, value: element1.neutral})
+            new_data.push({created_at: element1.created_at, sentiment: 'positive', lang: element1.lang, value: element1.positive})
+          }
+        }
+      });
+      new_data = new_data.sort(function(first, second) {
+        return (first.created_at - second.created_at) - (first.value - second.value);
+      });
+      this.yourVlSpec.data.values = new_data
+    },
     onResize() {
       this.yourVlSpec.vconcat[0].width = window.innerWidth/2  - 100
       this.yourVlSpec.vconcat[1].width = window.innerWidth/2  - 100
       this.yourVlSpec.vconcat[0].height = window.innerHeight/2  - 50
-      vegaEmbed('#vis', toRaw(this.yourVlSpec), {"actions": false, config: this.theme=='darkTheme'? carbon101 : googlechartsTheme })
+      this.embed()
     },
     setFilter(filter) {
-      vegaEmbed('#vis', toRaw(this.yourVlSpec), {"actions": false, config: this.theme=='darkTheme'? carbon101 : googlechartsTheme })
+      this.embed()
       if (filter=='none'){
-        this.yourVlSpec.vconcat[0].encoding.color.legend = null
+        this.yourVlSpec.vconcat[0].encoding.color.condition.legend = null
       }else{
-        this.yourVlSpec.vconcat[0].encoding.color.legend = []
+        this.yourVlSpec.vconcat[0].encoding.color.condition.legend = []
       }
       this.yourVlSpec.vconcat[0].encoding.order.field = filter
-      this.yourVlSpec.vconcat[0].encoding.color.field = filter
+      this.yourVlSpec.vconcat[0].encoding.color.condition.field = filter
       this.yourVlSpec.vconcat[0].encoding.color.title = filter
     },
     setChart(chart) {
-      vegaEmbed('#vis', toRaw(this.yourVlSpec), {"actions": false, config: this.theme=='darkTheme'? carbon101 : googlechartsTheme })
+      this.embed()
       this.yourVlSpec.vconcat[0].mark.type = chart
     },
     setInterval(time){
-      vegaEmbed('#vis', toRaw(this.yourVlSpec), {"actions": false, config: this.theme=='darkTheme'? carbon101 : googlechartsTheme })
+      this.embed()
       this.yourVlSpec.vconcat[0].encoding.x.timeUnit.step = this.timeModel
     }
   },
@@ -238,17 +315,13 @@ export default defineComponent({
     window.removeEventListener('resize', this.onResize);
   },
   async mounted() {
-    await this.mainStore.get_data()
-    this.yourVlSpec.data.values = this.mainStore.data
+    this.parseData()
 
 
     this.$nextTick(() => {
       window.addEventListener('resize', this.onResize)
-      vegaEmbed('#vis', toRaw(this.yourVlSpec), {"actions": false, config: this.theme=='darkTheme'? carbon101 : googlechartsTheme })
+      this.embed()
     })
-  },
-  computed: {
-    ...mapStores(MainStore),
   },
 })
 </script>

@@ -9,17 +9,15 @@ declare module 'vue' {
   export interface GlobalComponents {
     AboutUs: typeof import('./src/components/AboutUs.vue')['default']
     AppFooter: typeof import('./src/components/AppFooter.vue')['default']
-    BarChart: typeof import('./src/components/BarChart.vue')['default']
     BubbleChart: typeof import('./src/components/BubbleChart.vue')['default']
-    copy: typeof import('./src/components/BubbleChart copy.vue')['default']
-    DatePicker: typeof import('./src/components/DatePicker.vue')['default']
-    LoginComponent: typeof import('./src/components/LoginComponent.vue')['default']
     MainChart: typeof import('./src/components/MainChart.vue')['default']
     MainWrapper: typeof import('./src/components/MainWrapper.vue')['default']
     Navbar: typeof import('./src/components/Navbar.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     TestChart: typeof import('./src/components/TestChart.vue')['default']
+    TreeMap: typeof import('./src/components/TreeMap.vue')['default']
+    WordChartWrapper: typeof import('./src/components/WordChartWrapper.vue')['default']
     WordCloud: typeof import('./src/components/WordCloud.vue')['default']
   }
 }

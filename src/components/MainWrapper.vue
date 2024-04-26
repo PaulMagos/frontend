@@ -1,28 +1,20 @@
 <template>
-  <!-- <v-card :theme="this.theme"> -->
-    <!-- <v-card-title> -->
-    <!-- </v-card-title> -->
-    <!-- <v-container class="elevation-4"> -->
       <v-card :theme="theme" elevation="0">
-      <!-- <MainChart :theme="this.theme"></MainChart> -->
-        <BubbleChart :days="[new Date(`2024-01-06`), new Date(`2024-01-21`)]"></BubbleChart>
-        <!-- <WordCloud :days="[new Date(`2024-01-06`), new Date(`2024-01-20`)]"></WordCloud> -->
-        <!-- <TestChart></TestChart> -->
-    <!-- </v-container> -->
+        <MainChart :theme="theme"></MainChart>
+        <!-- <WordChartWrapper :theme="this.theme" :adapter="adapter" :days="[new Date(`2024-01-06`), new Date(`2024-01-06`)]"></WordChartWrapper> -->
       </v-card>
 </template>
 
 <script lang="js">
-import BubbleChart from './BubbleChart.vue';
 import MainChart from './MainChart.vue'
-import TestChart from './TestChart.vue'
 import { defineComponent } from 'vue';
-import WordCloud from './WordCloud.vue';
+import WordChartWrapper from './WordChartWrapper.vue';
 
 export default defineComponent({
   name: 'MainWrapper',
   props: {
-    theme: String
+    theme: String,
+    adapter: Object,
   },
   data(){
     return{

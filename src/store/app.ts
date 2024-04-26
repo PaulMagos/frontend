@@ -14,9 +14,9 @@ export const MainStore = defineStore("main", {
 
   },
   actions: {
-    async get_data(min: number = 15){
-      this.data = (await axios.get(`/tweets`)).data;
-      var new_data = [] as any;
+    parseData(min = 15){
+      console.log(this.data)
+      var new_data = [];
       this.data.forEach(element1 => {
         if (element1.lang != 'all'){
           if (element1.total < min){
@@ -48,7 +48,7 @@ export const MainStore = defineStore("main", {
       new_data = new_data.sort(function(first, second) {
         return (first.created_at - second.created_at) - (first.value - second.value);
       });
-      this.data = new_data
+      this.yourVlSpec.data.values = new_data
     },
     async get_hashtags_freq(){
       this.data = hashtags as hashtags_freq[]
