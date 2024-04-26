@@ -237,6 +237,8 @@ export default defineComponent({
   methods: {
     embed(){
       var time = this.timeModel
+      var chart = this.chartModel
+      var filter = this.filterModel
       vegaEmbed('#vis',
                 toRaw(this.yourVlSpec),
                 {"actions": false, config: this.theme=='darkTheme'? carbon101 : googlechartsTheme }
@@ -246,7 +248,7 @@ export default defineComponent({
                         var clicked = Object.keys(item.datum).map(function(key) {
                           return item.datum[key];
                         })
-                        if (clicked.length>1){
+                        if (clicked.length>1 && chart=='bar' && filter=='none'){
                           let currentDate = clicked[0];
                           var days = []
                           for (let i = 0; i < time; i++) {
