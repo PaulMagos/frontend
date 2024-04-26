@@ -81,8 +81,8 @@ export default defineComponent({
   },
   data() {
     return{
-      filterModel: 'sentiment',
-      filterItems: ['sentiment', 'lang', 'none'],
+      filterModel: 'none',
+      filterItems: ['none', 'sentiment', 'lang'],
       chartModel: 'bar',
       chartTypes: ['bar', 'area', 'line'],
       timeModel: 1,
@@ -99,7 +99,7 @@ export default defineComponent({
             height: window.innerHeight/2 - 50,
             mark: {
               type: 'bar',
-              point: true,
+              point: false,
               cornerRadiusEnd: 4,
               tooltip: true,
             },
@@ -232,18 +232,30 @@ export default defineComponent({
   },
   async created() {
     this.embed()
+    this.setFilter(this.filterModel)
   },
   methods: {
     embed(){
+      var time = this.timeModel
       vegaEmbed('#vis',
                 toRaw(this.yourVlSpec),
                 {"actions": false, config: this.theme=='darkTheme'? carbon101 : googlechartsTheme }
               ).then(result => {
                     result.view.addEventListener('click', function(event, item) {
-                      var clicked = Object.keys(item.datum).map(function(key) {
-                        return item.datum[key];
-                      })
-                      console.log(clicked)
+                      if (item!=null){
+                        var clicked = Object.keys(item.datum).map(function(key) {
+                          return item.datum[key];
+                        })
+                        if (clicked.length>1){
+                          let currentDate = clicked[0];
+                          var days = []
+                          for (let i = 0; i < time; i++) {
+                            days.push(new Date(currentDate.getTime()));
+                            currentDate.setDate(currentDate.getDate() + 1);
+                          }
+                          console.log(days)
+                        }
+                        }
                     });
                 }).catch(console.warn);
     },
