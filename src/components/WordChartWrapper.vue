@@ -2,7 +2,7 @@
   <div>
     <v-row>
       <v-col cols="9">
-        <BubbleChart :theme='this.theme' ref="BubbleChart" :data="this.data" v-if="chartType=='bubble'"></BubbleChart>
+        <BubbleChart :theme='this.theme' :kindOfWords="kindOfWords" ref="BubbleChart" :data="this.data" v-if="chartType=='bubble'"></BubbleChart>
         <WordCloud :theme="this.theme" :kindOfWords="kindOfWords" :data="this.data" v-if="chartType=='wordcloud'"></WordCloud>
         <TreeMap :theme="this.theme" :kindOfWords="kindOfWords" :data="this.data" v-if="chartType=='treemap'"></TreeMap>
       </v-col>
@@ -56,6 +56,14 @@
                 </v-card>
           </template>
         </v-menu>
+      </v-row>
+      <v-row>
+        <v-select
+          label="Language"
+          :items="langItems"
+          v-model="this.langModel"
+          @update:modelValue="this.filter_data(kindOfWords); $refs.BubbleChart.reset_datapoints()"
+        ></v-select>
       </v-row>
       <v-row>
         <v-btn-toggle mandatory v-model="chartType">
@@ -115,16 +123,15 @@ export default defineComponent({
   props: {
     theme: String,
     days: Array,
-    adapter: Object,
   },
   data(){
     return{
-      chartType: 'wordcloud',
+      chartType: 'bubble',
       menu: false,
       daysModelStr: null,
       langModel: 'Italian',
       langItems: [],
-      filter_min: 5,
+      filter_min: 0,
       daysModel: [this.days[0], this.days[this.days.length-1]],
       daysModelStr: null,
       kindOfWords: 'words',
@@ -137,14 +144,13 @@ export default defineComponent({
     }
   },
   created() {
-    this.filter_data('words', 10)
+    this.filter_data('words', 0)
   },
   mounted(){
     // this.filter_data(this.data)
     this.getSettedDays()
   },
   methods: {
-
     runAnimation(value){
       this.animation[value] = 'mdi-spin'
       setTimeout(() => {
@@ -153,26 +159,26 @@ export default defineComponent({
     },
 
     // Function to filter data based on threshold of frequency
-    filter_data(data_, min_frequency=this.filter_min, min_day = this.daysModel[0], max_day = (this.daysModel[this.daysModel.length-1] || this.daysModel[0]), lang=this.langModel){
+    filter_data(data_, min_frequency=this.filter_min, min_day = this.daysModel[0], max_day = (this.daysModel[this.daysModel.length-1] || this.daysModel[0])){
       switch(data_){
         case 'words':
           this.data = toRaw(words);
-          this.filter_min = 5
+          this.filter_min = 0
           break;
         case 'hashtags':
           this.data = toRaw(hashtags);
-          this.filter_min = 2
+          this.filter_min = 0
           break;
         }
       min_frequency = this.filter_min
       this.data = this.data.filter((element) => {
-        var created_at = new Date(element.created_at)
-        if (created_at.getTime() > this.max_day.getTime()){
-          this.max_day = created_at
-        }
-        if (this.checkDateGreater(created_at, min_day) && this.checkDateLess(created_at, max_day)){
-          if (element.frequency >= min_frequency){
-            if (element.lang == lang)
+          var created_at = new Date(element.created_at)
+          if (created_at.getTime() > this.max_day.getTime()){
+            this.max_day = created_at
+          }
+          if (this.checkDateGreater(created_at, min_day) && this.checkDateLess(created_at, max_day)){
+            if (element.frequency >= min_frequency){
+              if (element.lang == this.langModel)
               return element
           }
         }

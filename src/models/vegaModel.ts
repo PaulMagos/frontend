@@ -6,8 +6,8 @@ var vegaModel = {
   },
   vconcat: [
     {
-      width: window.innerWidth/2 - 100,
-      height: window.innerHeight/2 - 50,
+      width: window.innerWidth/1.25 - 100,
+      height: window.innerHeight/1.8 - 10,
       mark: {
         type: 'bar',
         point: false,
@@ -60,7 +60,7 @@ var vegaModel = {
       }
     },
     {
-      width: window.innerWidth/2 - 100,
+      width: window.innerWidth/1.25 - 100,
       height: 60,
       encoding: {x: {field: "created_at", type: "temporal"}},
       layer: [

@@ -1,12 +1,9 @@
 <template>
-  <v-container class="elevation-2">
-    <v-row>
       <!-- DIALOG -->
       <v-dialog
           ref="menu"
           :close-on-content-click="false"
           v-model="modal"
-          fullscreen
       >
         <v-card>
           <v-card-title class="d-flex justify-space-between align-center">
@@ -27,59 +24,84 @@
         </v-card>
       </v-dialog>
       <!--  VEGA LITE CHART -->
-      <v-col cols="9" id="vis">
-      </v-col>
+      <div id="vis">
+      </div>
       <!-- MENU OPTIONS -->
-      <v-col cols="3">
-        <v-card class="py-2" >
-          <v-card-title>
-            <span>Split</span>
-          </v-card-title>
-          <v-card-text>
+      <v-bottom-navigation
+        location="bottom"
+        drawer="true"
+        order="1"
+        elevation="16"
+        grow
+        >
+        <v-card elevation="0" class="px-2">
+            <v-card-subtitle class="d-flex justify-center">
+              <span>Split</span>
+            </v-card-subtitle>
           <v-btn-toggle v-model="filterModel" shaped mandatory color="secondary">
-            <v-btn depressed rounded @click="setFilter(filter)" v-for="filter in filterItems" :value="filter" flat>
+            <v-btn style="height: 35px;" depressed rounded @click="setFilter(filter)" v-for="filter in filterItems" :value="filter" flat>
               <v-icon v-if="filter==`sentiment`">mdi-human</v-icon>
               <v-icon v-else-if="filter==`none`">mdi-cancel</v-icon>
               <v-icon v-else>mdi-flag-variant</v-icon>
+                <v-tooltip v-if="filter==`sentiment`"
+                  activator="parent"
+                  location="bottom"
+                >Sentiment</v-tooltip>
+                <v-tooltip v-if="filter==`none`"
+                  activator="parent"
+                  location="bottom"
+                >None</v-tooltip>
+                <v-tooltip v-if="filter==`lang`"
+                  activator="parent"
+                  location="bottom"
+                >Language</v-tooltip>
             </v-btn>
           </v-btn-toggle>
-          </v-card-text>
-          <v-card-title>
-            <span>Chart</span>
-          </v-card-title>
-          <v-card-text>
+        </v-card>
+        <v-card elevation="0" class="px-2">
+            <v-card-subtitle class="d-flex justify-center">
+              <span>Chart Type</span>
+            </v-card-subtitle>
             <v-btn-toggle v-model="chartModel" shaped mandatory color="primary">
-              <v-btn depressed rounded @click="setChart(chart)" v-for="chart in chartTypes" :value="chart" flat>
+              <v-btn style="height: 35px;" depressed rounded @click="setChart(chart)" v-for="chart in chartTypes" :value="chart" flat>
                 <v-icon v-if="chart!=`area`">mdi-chart-{{ chart }}</v-icon>
                 <v-icon v-else>mdi-chart-areaspline</v-icon>
+                <v-tooltip
+                  activator="parent"
+                  location="bottom"
+                >{{ chart[0].toUpperCase() + chart.slice(1) }}</v-tooltip>
               </v-btn>
             </v-btn-toggle>
-          </v-card-text>
-          <v-card-title>
-            <span>Granularity</span>
-          </v-card-title>
-          <v-card-text>
-              <v-slider v-on:dblclick="timeModel=1"
-              density="compact" class="py-8" thumb-label
-              thumb-color="secondary"
-              show-ticks="always" v-model="timeModel"
-              :min="1" :max="31" :step="1" color="info">
-              <template v-slot:append>
-                <v-text-field
-                v-model="timeModel"
-                density="compact"
-                style="width: 80px"
-                type="number"
-                variant="outlined"
-                hide-details
-                ></v-text-field>
-              </template>
-            </v-slider>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
-  </v-container>
+          </v-card>
+          <v-card elevation="0" class="px-2">
+            <v-card-subtitle class="d-flex justify-center">
+              <span>Granularity</span>
+            </v-card-subtitle>
+            <v-btn-toggle v-model="timeModel" shaped mandatory color="success">
+              <v-btn style="height: 35px;"  depressed rounded :value=1 flat>
+                <span>D</span>
+                <v-tooltip
+                  activator="parent"
+                  location="bottom"
+                >Day</v-tooltip>
+              </v-btn>
+              <v-btn style="height: 35px;"  depressed rounded :value=7 flat>
+                <span>W</span>
+                <v-tooltip
+                  activator="parent"
+                  location="bottom"
+                >Week</v-tooltip>
+              </v-btn>
+              <v-btn style="height: 35px;"  depressed rounded :value=31 flat>
+                <span>M</span>
+                <v-tooltip
+                  activator="parent"
+                  location="bottom"
+                >Month</v-tooltip>
+              </v-btn>
+            </v-btn-toggle>
+          </v-card>
+      </v-bottom-navigation>
 </template>
 
 
@@ -188,9 +210,9 @@ export default defineComponent({
       this.yourVlSpec.data.values = new_data
     },
     onResize() {
-      this.yourVlSpec.vconcat[0].width = window.innerWidth/2  - 100
-      this.yourVlSpec.vconcat[1].width = window.innerWidth/2  - 100
-      this.yourVlSpec.vconcat[0].height = window.innerHeight/2  - 50
+      this.yourVlSpec.vconcat[0].width = window.innerWidth/1.25 - 100
+      this.yourVlSpec.vconcat[1].width = window.innerWidth/1.25 - 100
+      this.yourVlSpec.vconcat[0].height = window.innerHeight/1.6 - 250
       this.embed()
     },
     setFilter(filter) {

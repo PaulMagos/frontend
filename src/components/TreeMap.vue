@@ -63,6 +63,10 @@ export default defineComponent({
               },
               offsetY: -10,
             },
+            theme: {
+              mode: this.theme=='darkTheme'? 'dark' : 'light',
+              palette: 'palette7',
+            }
           },
     }
   }

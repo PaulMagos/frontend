@@ -10,10 +10,11 @@
       animation-overlap="10"
       font-size-ratio="0.3"
       animation-duration="2500"
+      :color="this.theme=='darkTheme'? `white` : `black`"
       class="ml-2"
       :enter-animation="{opacity: 0}"
       :leave-animation="{opacity: 0}"
-    >
+      >
     </vue-word-cloud>
 </template>
 
