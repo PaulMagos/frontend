@@ -1,14 +1,14 @@
 <template>
-<v-container class="elevation-4">
-  <v-row>
-    <v-col cols="9">
-      <BubbleChart :theme='this.theme' ref="BubbleChart" :data="this.data" v-if="chartType=='bubble'"></BubbleChart>
-      <WordCloud :theme="this.theme" :kindOfWords="kindOfWords" :width="this.get_width()" :height="this.get_height()" :data="this.data" v-else v-if="chartType=='wordcloud'"></WordCloud>
-      <TreeMap :theme="this.theme" :kindOfWords="kindOfWords" :width="this.get_width()" :height="this.get_height()" :data="this.data" v-if="chartType=='treemap'"></TreeMap>
-    </v-col>
-    <v-col cols="3">
-      <v-row>
-        <v-menu
+  <div>
+    <v-row>
+      <v-col cols="9">
+        <BubbleChart :theme='this.theme' ref="BubbleChart" :data="this.data" v-if="chartType=='bubble'"></BubbleChart>
+        <WordCloud :theme="this.theme" :kindOfWords="kindOfWords" :data="this.data" v-if="chartType=='wordcloud'"></WordCloud>
+        <TreeMap :theme="this.theme" :kindOfWords="kindOfWords" :data="this.data" v-if="chartType=='treemap'"></TreeMap>
+      </v-col>
+      <v-col cols="3">
+        <v-row>
+          <v-menu
           ref="menu"
           :close-on-content-click="false"
           v-model="menu"
@@ -57,7 +57,7 @@
           </template>
         </v-menu>
       </v-row>
-      <v-row class="py-0">
+      <v-row>
         <v-btn-toggle mandatory v-model="chartType">
           <v-btn @click="runAnimation(0)" value="bubble">
             <v-icon size="x-large">mdi-chart-bubble {{ animation[0] }}</v-icon>
@@ -70,7 +70,7 @@
           </v-btn>
         </v-btn-toggle>
       </v-row>
-      <v-row v-if="chartType=='bubble'" class="py-2">
+      <v-row v-if="chartType=='bubble'">
         <v-btn-toggle mandatory v-model="combined">
           <v-btn @click="$refs.BubbleChart.combined = 'true'; $refs.BubbleChart.combinedFunc()" value="true">
             <v-icon>mdi-pencil</v-icon>
@@ -80,7 +80,7 @@
           </v-btn>
         </v-btn-toggle>
       </v-row>
-      <v-row class="py-4">
+      <v-row>
           <v-btn-toggle mandatory :color="getWordsTypeColor()" v-model="kindOfWords">
             <v-btn @click="this.filter_data('words'); $refs.BubbleChart.reset_datapoints()" value="words">
               <v-icon :color="getWordsTypeColor('words')" size="x-large">mdi-file-word-box-outline</v-icon>
@@ -98,7 +98,7 @@
         </v-row>
     </v-col>
   </v-row>
-  </v-container>
+</div>
 </template>
 
 
@@ -109,7 +109,6 @@ import hashtags from '@/data/Tweets_hashtag_counts.json'
 import words from '@/data/Tweets_word_counts.json'
 import BubbleChart from './BubbleChart.vue';
 import WordCloud from './WordCloud.vue';
-import { treemap } from 'd3';
 
 export default defineComponent({
   name: 'WordChartWrapper',
@@ -126,11 +125,11 @@ export default defineComponent({
       langModel: 'Italian',
       langItems: [],
       filter_min: 5,
-      daysModel: [this.days[0], this.days[1]],
+      daysModel: [this.days[0], this.days[this.days.length-1]],
       daysModelStr: null,
       kindOfWords: 'words',
       min_day: this.days[0],
-      max_day: this.days[1],
+      max_day: this.days[this.days.length-1],
       data: words,
       animation: ['', '', ''],
       combined: 'true',
@@ -151,13 +150,6 @@ export default defineComponent({
       setTimeout(() => {
           this.animation[value] = ''
         }, 2000);
-    },
-
-    get_width(){
-      return window.innerWidth/1.8
-    },
-    get_height(){
-      return window.innerHeight/1.5
     },
 
     // Function to filter data based on threshold of frequency

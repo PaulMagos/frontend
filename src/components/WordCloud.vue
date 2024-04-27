@@ -1,6 +1,6 @@
 <template>
     <vue-word-cloud
-      :style="`height: ` + (this.height - 50) + `px; width: `+ (this.width - 50) + `px; cursor: pointer;`"
+      :style="`height: ` + (this.get_height()) + `px; width: `+ (this.get_width()-10) + `px; cursor: pointer;`"
       :words="get_date_formatted()"
       font-family="serif"
       spacing="0.2"
@@ -10,6 +10,7 @@
       animation-overlap="10"
       font-size-ratio="0.3"
       animation-duration="2500"
+      class="ml-2"
       :enter-animation="{opacity: 0}"
       :leave-animation="{opacity: 0}"
     >
@@ -22,8 +23,6 @@ import * as d3 from "d3";
 import VueWordCloud from 'vuewordcloud';
 import { MainStore } from "../store/app";
 import { mapStores } from 'pinia';
-import hashtags from '@/data/Tweets_hashtag_counts.json'
-import words from '@/data/Tweets_word_counts.json'
 
 export default defineComponent({
   name: 'WordCloud',
@@ -33,8 +32,6 @@ export default defineComponent({
   props:{
     theme: String,
     data: Array,
-    width: Number,
-    height: Number,
     kindOfWords: String,
   },
   data(){
@@ -47,11 +44,17 @@ export default defineComponent({
   async mounted(){
     this.svg = d3.select("#bubble_chart")
     .append('svg')
-    .attr("viewBox", [0, 0, this.width, this.height])
+    .attr("viewBox", [0, 0, this.get_width(), this.get_height()])
     .append('g')
-    .attr("transform", 'translate('+ this.width/2 +',' + this.height/2 + ')')
+    .attr("transform", 'translate('+ this.get_width()/2 +',' + this.get_height()/2 + ')')
   },
   methods:{
+    get_width(){
+      return window.innerWidth/12 * 9 -20
+    },
+    get_height(){
+      return window.innerHeight/1.15
+    },
     get_date_formatted(){
       var collapsed_data = {}
       this.data.forEach((element) => {

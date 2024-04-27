@@ -1,6 +1,6 @@
 <template>
-  <v-row id="bubble_chart">
-  </v-row>
+  <div id="bubble_chart" class="ml-2">
+  </div>
 </template>
 
 <script lang="js">
@@ -9,7 +9,7 @@ import * as d3 from "d3";
 import { MainStore } from "../store/app";
 import { mapStores } from 'pinia';
 
-var k = window.innerHeight/1.5 / window.innerWidth/1.8
+var k = window.innerHeight/1.25 / window.innerWidth/1.8
 
 var radiusScale = null
 var normalForceX = d3.forceX(0).strength(0.005)
@@ -52,10 +52,10 @@ export default defineComponent({
   },
   methods:{
     get_width(){
-      return window.innerWidth/1.8
+      return window.innerWidth/1.5
     },
     get_height(){
-      return window.innerHeight/1.5
+      return window.innerHeight/1.25
     },
 
 

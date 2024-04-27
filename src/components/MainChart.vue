@@ -1,12 +1,39 @@
 <template>
   <v-container class="elevation-2">
     <v-row>
+      <!-- DIALOG -->
+      <v-dialog
+          ref="menu"
+          :close-on-content-click="false"
+          v-model="modal"
+          fullscreen
+      >
+        <v-card>
+          <v-card-title class="d-flex justify-space-between align-center">
+              <div class="text-h4 text-medium-emphasis">
+                WordCloud
+              </div>
+              <v-btn
+                flat
+                color="error"
+                icon="mdi-close-circle-outline"
+                variant="text"
+                @click="modal = false"
+              >
+              </v-btn>
+          </v-card-title>
+          <v-divider class="mb-4"></v-divider>
+          <WordChartWrapper :theme="this.theme" :days="this.days"></WordChartWrapper>
+        </v-card>
+      </v-dialog>
+      <!--  VEGA LITE CHART -->
       <v-col cols="9" id="vis">
       </v-col>
+      <!-- MENU OPTIONS -->
       <v-col cols="3">
         <v-card class="py-2" >
           <v-card-title>
-            <span>Filter</span>
+            <span>Split</span>
           </v-card-title>
           <v-card-text>
           <v-btn-toggle v-model="filterModel" shaped mandatory color="secondary">
@@ -16,13 +43,11 @@
               <v-icon v-else>mdi-flag-variant</v-icon>
             </v-btn>
           </v-btn-toggle>
-
           </v-card-text>
           <v-card-title>
             <span>Chart</span>
           </v-card-title>
           <v-card-text>
-
             <v-btn-toggle v-model="chartModel" shaped mandatory color="primary">
               <v-btn depressed rounded @click="setChart(chart)" v-for="chart in chartTypes" :value="chart" flat>
                 <v-icon v-if="chart!=`area`">mdi-chart-{{ chart }}</v-icon>
@@ -61,9 +86,10 @@
 <script>
 import vegaEmbed from 'vega-embed'
 import { defineComponent, toRaw } from 'vue';
-import carbon101 from "../models/carbon101";
-import googlechartsTheme from "../models/googlecharts";
-import tweets from "../data/all_tweets_with_sentiment.json"
+import carbon101 from "@/models/carbon101";
+import googlechartsTheme from "@/models/googlecharts";
+import tweets from "@/data/all_tweets_with_sentiment.json"
+import vegaModel from "@/models/vegaModel"
 export default defineComponent({
   name: 'MainChart',
   props: {
@@ -86,148 +112,10 @@ export default defineComponent({
       chartModel: 'bar',
       chartTypes: ['bar', 'area', 'line'],
       timeModel: 1,
+      days: [],
+      modal: false,
       data: tweets,
-      yourVlSpec: {
-        $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-        description: 'A simple bar chart with embedded data.',
-        data: {
-          values: []
-        },
-        vconcat: [
-          {
-            width: window.innerWidth/2 - 100,
-            height: window.innerHeight/2 - 50,
-            mark: {
-              type: 'bar',
-              point: false,
-              cornerRadiusEnd: 4,
-              tooltip: true,
-            },
-            selection: {
-              series: {
-                type: "multi",
-                toggle: true,
-                encodings: ["color"],
-                on: "dbclick",
-                bind: "legend",
-              },
-              paintbrush: {
-                type: "point",
-                on: "pointerover",
-              }
-            },
-            transform: [{filter: {param: "date"}}],
-            encoding: {
-              x: {
-                field: "created_at",
-                type: "ordinal",
-                axis: {title: ""},
-                timeUnit: {unit: "yearmonthdate", step: this.timeModel},
-              },
-              y: {
-                aggregate: "sum",
-                field: 'value', type: 'quantitative', title: '# of Tweets',
-                // stack: 'center'
-              },
-              opacity: {
-                condition: {selection: "series", value: 1},
-                value: 0.2
-              },
-              order: {field: 'sentiment', type: "nominal", legend: []},
-              color: {
-                // field: 'sentiment',
-                // type: "nominal",
-                condition:{
-                  field: "sentiment", type: "nominal",
-                  param: 'paintbrush',
-                },
-                value: 'grey',
-                // scale: {
-                  // scheme: 'category10',
-                // },
-                title: 'Sentiment',
-              },
-            }
-          },
-          {
-            width: window.innerWidth/2 - 100,
-            height: 60,
-            encoding: {x: {field: "created_at", type: "temporal"}},
-            layer: [
-              {
-                mark:  {type: "bar", cornerRadiusEnd: 4},
-                encoding: {
-                  y: {field: "value", type: "quantitative"},
-                  color: {field: "sentiment", type: "nominal", legend: null}
-                }
-              },
-              {
-                params: [
-                  {
-                    name: "index",
-                    select: {
-                      type:"point",
-                      encodings: ["x"],
-                      on: "pointermove",
-                      nearest: true
-                    }
-                  }
-                ],
-                mark: {type: "point"},
-                encoding: {
-                  y: {field: "value", type: "quantitative"},
-                  opacity: {value: 0}
-                }
-              },
-              {
-                transform: [{filter: {and: ["index.created_at", {param: "index"}]}}],
-                mark: "rule",
-                encoding:{
-                  color: {field: "created_at", type: "temporal", legend: null}
-                }
-              },
-              {
-                transform: [{filter: {and: ["index.created_at", {param: "index"}]}}],
-                mark: "text",
-                encoding: {
-                  y: {value: 10},
-                  text: {field: "created_at", type: "temporal", legend: null},
-                  color: {field: "created_at", type: "nominal", legend: null}
-                }
-              },
-              {
-                  mark: {type: "bar", cornerRadiusEnd: 4},
-                  params: [
-                    {name: "date", select: {type: "interval", encodings: ["x"]}}
-                  ],
-                  encoding: {
-                    x: {field: "created_at", type: "temporal", title: 'Date', legend: null,},
-                    y: {
-                      aggregate: "sum", field: 'value',
-                      type: "quantitative",
-                      axis: {tickCount: 3, grid: false, title: 'Timeline Filter'}, legend: null
-                    },
-                  },
-                },
-                {
-                  transform: [{filter: {param: "date"}}],
-                  mark: {type: "bar", cornerRadiusEnd: 4},
-                  encoding: {
-                    x: {field: "created_at", type: "temporal", title: 'Date', legend: null,},
-                    y: {
-                      aggregate: "sum", field: 'value',
-                      type: "quantitative",
-                      axis: {tickCount: 3, grid: false, title: 'Timeline Filter'}, legend: null
-                    },
-                    color: {value: "orange", legend: null}
-                  }
-                }
-              ],
-              config: {text: {align: "right", dx: -5, dy: 5}}
-          }
-        ],
-        config: {},
-      },
+      yourVlSpec: vegaModel,
     }
   },
   async created() {
@@ -236,34 +124,34 @@ export default defineComponent({
   },
   methods: {
     embed(){
-      var time = this.timeModel
-      var chart = this.chartModel
-      var filter = this.filterModel
       vegaEmbed('#vis',
                 toRaw(this.yourVlSpec),
                 {"actions": false, config: this.theme=='darkTheme'? carbon101 : googlechartsTheme }
               ).then(result => {
-                    result.view.addEventListener('click', function(event, item) {
+                    result.view.addEventListener('click', (event, item) => {
                       if (item!=null){
                         var clicked = Object.keys(item.datum).map(function(key) {
                           return item.datum[key];
                         })
-                        if (clicked.length>1 && chart=='bar' && filter=='none'){
+                        if (clicked.length>1 &&
+                            this.chartModel=='bar' &&
+                            this.filterModel=='none' &&
+                            item.mark.marktype!='path' &&
+                            item.description.startsWith('created_at')
+                          ){
                           let currentDate = clicked[0];
-                          var days = []
-                          for (let i = 0; i < time; i++) {
-                            days.push(new Date(currentDate.getTime()));
+                          this.days = []
+                          for (let i = 0; i < this.timeModel; i++) {
+                            this.days.push(new Date(currentDate.getTime()));
                             currentDate.setDate(currentDate.getDate() + 1);
                           }
-                          console.log(days)
+                          this.modal = true
                         }
                         }
                     });
                 }).catch(console.warn);
     },
-    openDialog(event) {
-      console.log(event)
-    },
+
     parseData(min = 15){
       var new_data = [];
       this.data.forEach(element1 => {

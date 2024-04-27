@@ -1,5 +1,5 @@
 <template>
-  <apexchart :width="this.width-50" :height="this.height-50" :options="chartOptions" :series="arrangeData()">
+  <apexchart class="ml-2 mr-2" :width="get_width()" :height="get_height()" :options="chartOptions" :series="arrangeData()">
   </apexchart>
 </template>
 
@@ -16,11 +16,15 @@ export default defineComponent({
   props:{
     theme: String,
     data: Array,
-    width: Number,
-    height: Number,
     kindOfWords: String,
   },
   methods:{
+    get_width(){
+      return window.innerWidth/12*9 -20
+    },
+    get_height(){
+      return window.innerHeight/1.15
+    },
     arrangeData(){
       var collapsed_data = {}
       this.data.forEach((element) => {
