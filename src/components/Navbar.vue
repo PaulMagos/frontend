@@ -1,5 +1,5 @@
 <template>
-  <v-app-bar :theme="this.theme">
+  <v-app-bar elevation="0" :theme="this.theme">
     <v-app-bar-title><v-icon @click="this.goToHome()" color="cyan">mdi-chart-arc</v-icon></v-app-bar-title>
       <v-icon @click="$emit('toggleTheme')" value="about"> mdi-theme-light-dark </v-icon>
       <div class="px-2"></div>

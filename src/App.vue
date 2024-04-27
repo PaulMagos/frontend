@@ -1,6 +1,6 @@
 <template>
     <v-app :theme="isDark? 'darkTheme' : 'lightTheme'" class="d-flex justify-center align-center">
-      <Navbar @toggleTheme="toggleDark()" :theme="isDark? 'darkTheme' : 'lightTheme'" />
+      <Navbar elevation="2" @toggleTheme="toggleDark()" :theme="isDark? 'darkTheme' : 'lightTheme'" />
       <v-main :theme="isDark? 'darkTheme' : 'lightTheme'">
           <RouterView v-slot="{ Component }" :adapter="adapter" :theme="isDark? 'darkTheme' : 'lightTheme'" class="d-flex py-8 justify-center align-center">
             <transition name="fade" mode="out-in">

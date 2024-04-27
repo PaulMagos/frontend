@@ -31,7 +31,7 @@
         location="bottom"
         drawer="true"
         order="1"
-        elevation="16"
+        elevation="8"
         grow
         >
         <v-card elevation="0" class="px-2">
