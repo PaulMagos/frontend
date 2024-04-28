@@ -12,7 +12,7 @@ var normalForceX = d3.forceX(0).strength(0.005)
 var normalForceY = d3.forceY(0).strength(0.005)
 
 var separatedForceX = d3.forceX(function(d) {
-  if (d.frequency > 5){
+  if (d[1] > 5){
     return window.innerWidth/8
   }else{
     return -window.innerWidth/8
@@ -69,7 +69,7 @@ export default defineComponent({
           max = element.frequency
         }
       });
-      radiusScale = d3.scaleSqrt().domain([min, max]).range([10, max*3])
+      radiusScale = d3.scaleSqrt().domain([min, max]).range([min, max])
     },
 
     get_date_formatted(){
@@ -78,18 +78,21 @@ export default defineComponent({
         const word = this.kindOfWords === 'hashtags' ? element.hashtag : element.word;
         var elem = [word, element.frequency, element.lang, element.created_at]
         if (elem[0] in collapsed_data)
-          collapsed_data[elem[0]]['frequency'] += elem[1]
+          collapsed_data[elem[0]] += elem[1]
         else
-          collapsed_data[elem[0]] = {}
-          collapsed_data[elem[0]]['frequency'] = elem[1]
-          collapsed_data[elem[0]]['lang'] = elem[2]
-          collapsed_data[elem[0]]['created_at'] = elem[3]
+          collapsed_data[elem[0]] = elem[1]
       })
 
       var new_data = []
+      var other_values = []
       Object.entries(collapsed_data).forEach(([key, value]) =>{
-        new_data.push({word: key, lang: value.lang, frequency: value.frequency, created_at: value.created_at})
+        if (value == 1){
+          other_values.push(key)
+        }else{
+          new_data.push([key, value])
+        }
       })
+      new_data.push(['Others 1', other_values.length, other_values])
       this.data = new_data
       this.minMax()
       this.ready(new_data)
@@ -125,7 +128,7 @@ export default defineComponent({
     reset_datapoints(){
       var bubbles = this.svg.selectAll(".bubbles")
       var texts = this.svg.selectAll(".texts")
-      var tooltip = this.svg.selectAll(".tooltips")
+      var tooltip = d3.select('#bubble_chart').selectAll(".tooltip")
       // Fade out and remove any existing circles
       bubbles
         .transition() // Apply transition for fade-out effect
@@ -134,6 +137,12 @@ export default defineComponent({
         .style("opacity", 0) // Fade out by reducing opacity to 0
         .remove();
       texts
+        .transition() // Apply transition for fade-out effect
+        .duration(500) // Set the duration of transition
+        .style("opacity", 0) // Fade out by reducing opacity to 0
+        .remove();
+
+      tooltip
         .transition() // Apply transition for fade-out effect
         .duration(500) // Set the duration of transition
         .style("opacity", 0) // Fade out by reducing opacity to 0
@@ -149,6 +158,43 @@ export default defineComponent({
 
     // Function to plot data
     ready(datapoints){
+
+      // -1- Create a tooltip div that is hidden by default:
+    const tooltip = d3.select("#bubble_chart")
+      .append("div")
+        .style("opacity", 0)
+        .attr("class", "tooltip")
+        .style("position", "absolute")
+        .style("background-color", "#16202b")
+        .style("border-radius", "5px")
+        .style("border", "solid")
+        .style("border-color", 'white')
+        .style("padding", "10px")
+        .style("color", "white")
+
+      // -2- Create 3 functions to show / update (when mouse move but stay on same circle) / hide the tooltip
+      const showTooltip = function(event, d) {
+        tooltip
+          .transition()
+          .duration(200)
+        tooltip
+          .style("opacity", 50)
+          .html(d[0] + '<br>' + 'Frequency: ' + d[1] + '<br>' + (d[0]=='Others 1'? d[2].join(' ') : ''))
+          .style("left", (event.x) + "px")
+          .style("top", (event.y) + "px")
+      }
+      const moveTooltip = function(event, d) {
+        tooltip
+          .style("left", (event.x) + "px")
+          .style("top", (event.y) + "px")
+      }
+      const hideTooltip = function(event, d) {
+        tooltip
+          .transition()
+          .duration(200)
+          .style("opacity", 0)
+      }
+
       // Select the artist in the svg
       var bubbles = this.svg.selectAll(null)
       // Set the data
@@ -157,10 +203,13 @@ export default defineComponent({
       .join('circle')
         .attr('class', 'bubbles')
         .attr('r', function(d){
-          return radiusScale(d.frequency)
+          return radiusScale(d[1])
         })
         .attr('fill', d3.scaleOrdinal(d3.schemeCategory10).domain(datapoints))
-
+          // -3- Trigger the functions
+      .on("mouseover", showTooltip )
+      .on("mousemove", moveTooltip )
+      .on("mouseleave", hideTooltip )
 
       var texts = this.svg.selectAll(null)
         .data(datapoints, function(d) {return(d)})
@@ -168,8 +217,8 @@ export default defineComponent({
         .append('text')
         .attr('class', 'texts')
         .text((d) => {
-          if(d.frequency>1)
-          return d.word
+          if(d[1]>1)
+          return d[0]
         })
         .style('fill', 'white')
 
@@ -179,7 +228,7 @@ export default defineComponent({
         .force('x', normalForceX)
         .force('y', normalForceY)
         .force('collide', d3.forceCollide(function(d){
-              return radiusScale(d.frequency) + 2
+              return radiusScale(d[1]) + 2
         }))
 
       // Set the tick of the simulation
@@ -200,10 +249,10 @@ export default defineComponent({
           return d.x
         })
         .attr("y", function(d){
-          return d.y + radiusScale(d.frequency)/10
+          return d.y + radiusScale(d[1])/10
         })
         .attr('font-size', function(d) {
-          var ip = radiusScale(d.frequency)/3
+          var ip = radiusScale(d[1])/3
           return ip
         })
         .attr('text-anchor', 'middle')
@@ -215,14 +264,8 @@ export default defineComponent({
 </script>
 
 <style>
-  .bubbles {
+.bubbles:hover {
     stroke-width: 2px;
     stroke: white;
-  }
-  .bubbles:hover {
-    stroke: black;
-  }
-
-  .texts:hover{
   }
 </style>
