@@ -15,8 +15,6 @@ export default defineConfig({
     Vue({
       template: { transformAssetUrls },
     }),
-    VueDevTools(),
-    // https://github.com/vuetifyjs/vuetify-loader/tree/master/packages/vite-plugin#readme
     Vuetify({
       autoImport:  true,
     }),
@@ -33,8 +31,8 @@ export default defineConfig({
   define: { 'process.env': {} },
   resolve: {
     alias: {
-      // '@': fileURLToPath(new URL('src', import.meta.url)),
-      '@': path.resolve(__dirname, 'src')
+      '@': fileURLToPath(new URL('src', import.meta.url)),
+      // '@': path.resolve(__dirname, 'src')
     },
     extensions: [
       '.js',

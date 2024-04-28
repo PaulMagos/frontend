@@ -32,14 +32,13 @@ export default defineComponent({
       menu: false,
       combined: 'true',
       svg: null,
-      data: this.data,
+      mydata: null,
       simulation: null,
     }
   },
   created() {
   },
   async mounted(){
-    this.minMax()
     this.svg = d3.select("#bubble_chart")
     .append('svg')
     .attr("viewBox", [0, 0, this.get_width(), this.get_height()])
@@ -59,9 +58,10 @@ export default defineComponent({
     // Function which loops over all the data and finds the maximum and minimun frequency of the words
     // then creates a scaler to scale the bubbles in the chart based on the min and max
     minMax(){
+      this.mydata = this.data
       var min = Infinity
       var max = -Infinity
-      this.data.forEach(element => {
+      this.mydata.forEach(element => {
         if (element.frequency < min){
           min = element.frequency
         }
@@ -69,12 +69,13 @@ export default defineComponent({
           max = element.frequency
         }
       });
-      radiusScale = d3.scaleSqrt().domain([min, max]).range([min, max])
+      radiusScale = d3.scaleSqrt().domain([min, max]).range([min, 70])
     },
 
     get_date_formatted(){
+      this.mydata = this.data
       var collapsed_data = {}
-      this.data.forEach((element) => {
+      this.mydata.forEach((element) => {
         const word = this.kindOfWords === 'hashtags' ? element.hashtag : element.word;
         var elem = [word, element.frequency, element.lang, element.created_at]
         if (elem[0] in collapsed_data)
@@ -93,7 +94,7 @@ export default defineComponent({
         }
       })
       new_data.push(['Others 1', other_values.length, other_values])
-      this.data = new_data
+      this.mydata = new_data
       this.minMax()
       this.ready(new_data)
     },

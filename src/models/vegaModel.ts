@@ -1,3 +1,5 @@
+import { scale } from "vega";
+
 var vegaModel = {
   $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
   description: 'A simple bar chart with embedded data.',
@@ -7,7 +9,7 @@ var vegaModel = {
   vconcat: [
     {
       width: window.innerWidth/1.25 - 100,
-      height: window.innerHeight/1.8 - 10,
+      height: window.innerHeight/1.8 - 60,
       mark: {
         type: 'bar',
         point: false,
@@ -32,6 +34,7 @@ var vegaModel = {
         x: {
           field: "created_at",
           type: "ordinal",
+          scale: {},
           axis: {title: ""},
           timeUnit: {unit: "yearmonthdate", step: 1},
         },
@@ -43,18 +46,23 @@ var vegaModel = {
           condition: {selection: "series", value: 1},
           value: 0.2
         },
-        order: {field: 'sentiment', type: "nominal", legend: []},
+        order: {
+          field: 'sentiment',
+          scale: {
+            domain: [
+              'neutral',
+              'positive',
+              'negative'
+            ]
+          },
+          legend: []
+        },
         color: {
-          // field: 'sentiment',
-          // type: "nominal",
           condition:{
             field: "sentiment", type: "nominal",
             param: 'paintbrush',
           },
           value: 'grey',
-          // scale: {
-            // scheme: 'category10',
-          // },
           title: 'Sentiment',
         },
       }

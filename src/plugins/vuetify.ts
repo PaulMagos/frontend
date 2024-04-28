@@ -50,6 +50,6 @@ export default createVuetify({
       lightTheme,
       darkTheme
     },
-    defaultTheme: 'darkTheme',
+    defaultTheme: 'lightTheme',
   },
 })

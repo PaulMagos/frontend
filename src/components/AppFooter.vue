@@ -19,12 +19,12 @@ export default defineComponent({
   },
   data(){
     return {
-      theme: this.theme
+      currtheme: this.theme
     }
   },
   methods: {
     getTheme(){
-      return this.theme? 'dark' : 'ligh'
+      return this.currtheme? 'dark' : 'ligh'
     }
 
   }

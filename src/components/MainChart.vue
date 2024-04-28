@@ -119,7 +119,6 @@ export default defineComponent({
   },
   watch: {
     theme: function() { // watch it
-        console.log(googlechartsTheme)
         this.embed()
     },
     timeModel: function() {
@@ -212,7 +211,7 @@ export default defineComponent({
     onResize() {
       this.yourVlSpec.vconcat[0].width = window.innerWidth/1.25 - 100
       this.yourVlSpec.vconcat[1].width = window.innerWidth/1.25 - 100
-      this.yourVlSpec.vconcat[0].height = window.innerHeight/1.6 - 250
+      this.yourVlSpec.vconcat[0].height = window.innerHeight/1.8 - 60
       this.embed()
     },
     setFilter(filter) {

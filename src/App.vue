@@ -2,7 +2,7 @@
     <v-app :theme="isDark? 'darkTheme' : 'lightTheme'" class="d-flex justify-center align-center">
       <Navbar elevation="2" @toggleTheme="toggleDark()" :theme="isDark? 'darkTheme' : 'lightTheme'" />
       <v-main :theme="isDark? 'darkTheme' : 'lightTheme'">
-          <RouterView v-slot="{ Component }" :adapter="adapter" :theme="isDark? 'darkTheme' : 'lightTheme'" class="d-flex py-8 justify-center align-center">
+          <RouterView  @toggleTheme="toggleDark()" v-slot="{ Component }" :theme="isDark? 'darkTheme' : 'lightTheme'" class="d-flex py-8 justify-center align-center">
             <transition name="fade" mode="out-in">
               <component :is="Component" />
             </transition>
@@ -17,7 +17,6 @@ import { useDate } from 'vuetify'
 import { RouterView } from 'vue-router';
 import { useDark, useToggle } from '@vueuse/core'
 
-const adapter = useDate()
 const isDark = useDark()
 const toggleDark = useToggle(isDark)
 </script>
