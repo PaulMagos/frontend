@@ -4,6 +4,7 @@
           ref="menu"
           :close-on-content-click="false"
           v-model="modal"
+          fullscreen
       >
         <v-card>
           <v-card-title class="d-flex justify-space-between align-center">
@@ -209,6 +210,7 @@ export default defineComponent({
       this.yourVlSpec.data.values = new_data
     },
     onResize() {
+      this.yourVlSpec.vconcat[0].encoding.color.value = this.theme=='darkTheme'? 'white' : 'black'
       this.yourVlSpec.vconcat[0].width = window.innerWidth/1.25 - 100
       this.yourVlSpec.vconcat[1].width = window.innerWidth/1.25 - 100
       this.yourVlSpec.vconcat[0].height = window.innerHeight/1.8 - 60

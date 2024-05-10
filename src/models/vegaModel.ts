@@ -62,7 +62,7 @@ var vegaModel = {
             field: "sentiment", type: "nominal",
             param: 'paintbrush',
           },
-          value: 'grey',
+          value: 'black',
           title: 'Sentiment',
         },
       }
@@ -137,7 +137,7 @@ var vegaModel = {
                 type: "quantitative",
                 axis: {tickCount: 3, grid: false, title: 'Timeline Filter'}, legend: null
               },
-              color: {value: "orange", legend: null}
+              color: {value: "black", legend: null}
             }
           }
         ],
