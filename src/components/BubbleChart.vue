@@ -33,7 +33,6 @@ export default defineComponent({
       menu: false,
       combined: 'true',
       svg: null,
-      mydata: null,
       simulation: null,
     }
   },
@@ -59,10 +58,9 @@ export default defineComponent({
     // Function which loops over all the data and finds the maximum and minimun frequency of the words
     // then creates a scaler to scale the bubbles in the chart based on the min and max
     get_date_formatted(){
-      this.mydata = this.data
       var min = Infinity
       var max = -Infinity
-      this.mydata.forEach(element => {
+      this.data.forEach(element => {
         if (element.frequency < min){
           min = element.frequency
         }
@@ -71,7 +69,7 @@ export default defineComponent({
         }
       });
       radiusScale = d3.scaleLog().domain([min, max]).range([min, 70])
-      this.ready(this.mydata)
+      this.ready(this.data)
     },
 
     // Function to separate the bubbles based on a condition

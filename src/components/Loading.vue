@@ -1,9 +1,8 @@
 <template>
-  <div class="d-flex justify-center align-center div_center">
+  <div class="d-flex justify-center align-center" :style="{ height: this.get_height() + 'px' }">
     <v-progress-circular
       :size="100"
       :width="8"
-      color="primary"
       indeterminate
     >Loading...</v-progress-circular>
   </div>
@@ -14,7 +13,11 @@ import { defineComponent} from 'vue';
 
 export default defineComponent({
   name: 'Loading',
-
+  methods:{
+    get_height(){
+      return window.innerHeight - 100
+    }
+  }
 })
 </script>
 
@@ -24,6 +27,6 @@ export default defineComponent({
   }
 
   .div_center {
-    height: 100%;
+    height: 500px;
   }
 </style>

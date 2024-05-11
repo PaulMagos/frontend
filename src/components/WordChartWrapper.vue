@@ -5,7 +5,7 @@
         <Loading></Loading>
       </v-col>
       <v-col v-else cols="9">
-        <BubbleChart :loading="this.loading" :theme='this.theme' :kindOfWords="kindOfWords" ref="BubbleChart" :data="this.data" v-if="chartType=='bubble'"></BubbleChart>
+        <BubbleChart :loading="this.loading" :theme='this.theme' :kindOfWords="kindOfWords" ref="BubbleChart" :data="data" v-if="chartType=='bubble'"></BubbleChart>
         <WordCloud :loading="this.loading" :theme="this.theme" :kindOfWords="kindOfWords" :data="this.data" v-if="chartType=='wordcloud'"></WordCloud>
         <TreeMap :loading="this.loading" :theme="this.theme" :kindOfWords="kindOfWords" :data="this.data" v-if="chartType=='treemap'"></TreeMap>
       </v-col>
@@ -141,7 +141,7 @@ export default defineComponent({
       daysModelStr: null,
       kindOfWords: 'words',
       min_day: this.days[0],
-      loading: false,
+      loading: true,
       max_day: this.days[this.days.length-1],
       data: null,
       animation: ['', '', ''],
@@ -164,34 +164,13 @@ export default defineComponent({
         }, 2000);
     },
 
-    // // Function to filter data based on threshold of frequency
-    // async filter_data(data_, min_frequency=this.filter_min, min_day = this.daysModel[0], max_day = (this.daysModel[this.daysModel.length-1] || this.daysModel[0])){
-    //   await this.syncMyWords()
-    //   console.log(this.data)
-    //   min_frequency = this.filter_min
-    //   this.data = this.data.filter((element) => {
-    //       var created_at = new Date(element.created_at)
-    //       if (created_at.getTime() > this.max_day.getTime()){
-    //         this.max_day = created_at
-    //       }
-    //       if (this.checkDateGreater(created_at, min_day) && this.checkDateLess(created_at, max_day)){
-    //         if (element.frequency >= min_frequency){
-    //           if (element.lang == this.langModel)
-    //           return element
-    //       }
-    //     }
-    //     if (!this.langItems.includes(element.lang)){
-    //       this.langItems.push(element.lang)
-    //     }
-    //   })
-    // },
-
     async syncMyWords(){
+      this.loading = true
       const source = this.kindOfWords
       var min_day = this.format_date(this.daysModel[0])
       var max_day = this.format_date(this.daysModel[this.daysModel.length-1] || this.daysModel[0])
-      this.data = undefined
       var data = (await axios.get(`/get_words?source=${source}&from_=${min_day}&to_=${max_day}`)).data
+      this.data = undefined
       while (data==undefined){
           setTimeout(() => {
             this.loading = true
