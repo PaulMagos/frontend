@@ -190,6 +190,7 @@ export default defineComponent({
       const source = this.kindOfWords
       var min_day = this.format_date(this.daysModel[0])
       var max_day = this.format_date(this.daysModel[this.daysModel.length-1] || this.daysModel[0])
+      this.data = undefined
       var data = (await axios.get(`/get_words?source=${source}&from_=${min_day}&to_=${max_day}`)).data
       while (data==undefined){
           setTimeout(() => {
