@@ -170,12 +170,22 @@ export default defineComponent({
       var min_day = this.format_date(this.daysModel[0])
       var max_day = this.format_date(this.daysModel[this.daysModel.length-1] || this.daysModel[0])
       var data = (await axios.get(`/get_words?source=${source}&from_=${min_day}&to_=${max_day}`)).data
+      var langs = (await axios.get(`/get_langs_words?source=${source}`)).data
+
       this.data = undefined
       while (data==undefined){
           setTimeout(() => {
             this.loading = true
           }, (500));
       }
+
+      while (langs==undefined){
+          setTimeout(() => {
+            this.loading = true
+          }, (500));
+      }
+
+      this.langItems=langs
       this.data = data
       this.loading=false
     },
