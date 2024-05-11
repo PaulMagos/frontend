@@ -1,10 +1,13 @@
 <template>
   <div>
     <v-row>
-      <v-col cols="9">
-        <BubbleChart :theme='this.theme' :kindOfWords="kindOfWords" ref="BubbleChart" :data="this.data" v-if="chartType=='bubble'"></BubbleChart>
-        <WordCloud :theme="this.theme" :kindOfWords="kindOfWords" :data="this.data" v-if="chartType=='wordcloud'"></WordCloud>
-        <TreeMap :theme="this.theme" :kindOfWords="kindOfWords" :data="this.data" v-if="chartType=='treemap'"></TreeMap>
+      <v-col v-if="this.loading" cols="9">
+        <Loading></Loading>
+      </v-col>
+      <v-col v-else cols="9">
+        <BubbleChart :loading="this.loading" :theme='this.theme' :kindOfWords="kindOfWords" ref="BubbleChart" :data="this.data" v-if="chartType=='bubble'"></BubbleChart>
+        <WordCloud :loading="this.loading" :theme="this.theme" :kindOfWords="kindOfWords" :data="this.data" v-if="chartType=='wordcloud'"></WordCloud>
+        <TreeMap :loading="this.loading" :theme="this.theme" :kindOfWords="kindOfWords" :data="this.data" v-if="chartType=='treemap'"></TreeMap>
       </v-col>
       <v-col cols="3">
         <v-row>
@@ -48,7 +51,7 @@
                     class="px-4"
                     color="success"
                     flat
-                    @click="this.getSettedDays(); menu = false; this.filter_data(kindOfWords); $refs.BubbleChart.reset_datapoints()"
+                    @click="this.getSettedDays(); menu = false; this.syncMyWords(); $refs.BubbleChart.reset_datapoints()"
                     >
                     <v-icon size="large">mdi-calendar-check</v-icon>
                   </v-btn>
@@ -62,7 +65,7 @@
           label="Language"
           :items="langItems"
           v-model="this.langModel"
-          @update:modelValue="this.filter_data(kindOfWords); $refs.BubbleChart.reset_datapoints()"
+          @update:modelValue="this.syncMyWords(); $refs.BubbleChart.reset_datapoints()"
         ></v-select>
       </v-row>
       <v-row>
@@ -90,10 +93,10 @@
       </v-row>
       <v-row>
           <v-btn-toggle mandatory :color="getWordsTypeColor()" v-model="kindOfWords">
-            <v-btn @click="this.filter_data('words'); $refs.BubbleChart.reset_datapoints()" value="words">
+            <v-btn @click="this.syncMyWords(); $refs.BubbleChart.reset_datapoints()" value="words">
               <v-icon :color="getWordsTypeColor('words')" size="x-large">mdi-file-word-box-outline</v-icon>
             </v-btn>
-            <v-btn @click="this.filter_data('hashtags'); $refs.BubbleChart.reset_datapoints()"  value="hashtags">
+            <v-btn @click="this.syncMyWords(); $refs.BubbleChart.reset_datapoints()"  value="hashtags">
               <v-icon :color="getWordsTypeColor('hashtags')" size="x-large">mdi-pound-box-outline</v-icon>
             </v-btn>
             <v-btn value="images">
@@ -113,11 +116,13 @@
 
 <script>
 import { defineComponent, toRaw } from 'vue';
-import hashtags from '@/data/Tweets_hashtag_counts.json'
-import words from '@/data/Tweets_word_counts.json'
+// import hashtags from '@/data/Tweets_hashtag_counts.json'
+// import words from '@/data/Tweets_word_counts.json'
+import axios from 'axios'
 import BubbleChart from './BubbleChart.vue';
 import WordCloud from './WordCloud.vue';
-
+import moment from 'moment'
+import Loading from './Loading.vue'
 export default defineComponent({
   name: 'WordChartWrapper',
   props: {
@@ -136,18 +141,19 @@ export default defineComponent({
       daysModelStr: null,
       kindOfWords: 'words',
       min_day: this.days[0],
+      loading: false,
       max_day: this.days[this.days.length-1],
-      data: words,
+      data: null,
       animation: ['', '', ''],
       combined: 'true',
       simulation: null,
     }
   },
-  created() {
-    this.filter_data('words', 0)
+  async created() {
+    await this.syncMyWords()
   },
-  mounted(){
-    // this.filter_data(this.data)
+  async mounted(){
+    await this.syncMyWords()
     this.getSettedDays()
   },
   methods: {
@@ -158,35 +164,47 @@ export default defineComponent({
         }, 2000);
     },
 
-    // Function to filter data based on threshold of frequency
-    filter_data(data_, min_frequency=this.filter_min, min_day = this.daysModel[0], max_day = (this.daysModel[this.daysModel.length-1] || this.daysModel[0])){
-      switch(data_){
-        case 'words':
-          this.data = toRaw(words);
-          this.filter_min = 0
-          break;
-        case 'hashtags':
-          this.data = toRaw(hashtags);
-          this.filter_min = 0
-          break;
-        }
-      min_frequency = this.filter_min
-      this.data = this.data.filter((element) => {
-          var created_at = new Date(element.created_at)
-          if (created_at.getTime() > this.max_day.getTime()){
-            this.max_day = created_at
-          }
-          if (this.checkDateGreater(created_at, min_day) && this.checkDateLess(created_at, max_day)){
-            if (element.frequency >= min_frequency){
-              if (element.lang == this.langModel)
-              return element
-          }
-        }
-        if (!this.langItems.includes(element.lang)){
-          this.langItems.push(element.lang)
-        }
-      })
+    // // Function to filter data based on threshold of frequency
+    // async filter_data(data_, min_frequency=this.filter_min, min_day = this.daysModel[0], max_day = (this.daysModel[this.daysModel.length-1] || this.daysModel[0])){
+    //   await this.syncMyWords()
+    //   console.log(this.data)
+    //   min_frequency = this.filter_min
+    //   this.data = this.data.filter((element) => {
+    //       var created_at = new Date(element.created_at)
+    //       if (created_at.getTime() > this.max_day.getTime()){
+    //         this.max_day = created_at
+    //       }
+    //       if (this.checkDateGreater(created_at, min_day) && this.checkDateLess(created_at, max_day)){
+    //         if (element.frequency >= min_frequency){
+    //           if (element.lang == this.langModel)
+    //           return element
+    //       }
+    //     }
+    //     if (!this.langItems.includes(element.lang)){
+    //       this.langItems.push(element.lang)
+    //     }
+    //   })
+    // },
+
+    async syncMyWords(){
+      const source = this.kindOfWords
+      var min_day = this.format_date(this.daysModel[0])
+      var max_day = this.format_date(this.daysModel[this.daysModel.length-1] || this.daysModel[0])
+      var data = (await axios.get(`/get_words?source=${source}&from_=${min_day}&to_=${max_day}`)).data
+      while (data==undefined){
+          setTimeout(() => {
+            this.loading = true
+          }, (500));
+      }
+      this.data = data
+      this.loading=false
     },
+
+    format_date(value){
+         if (value) {
+           return moment(String(value)).format('YYYY-MM-DD')
+          }
+      },
 
     checkDateLess(a, b){
       if (a.getFullYear() < b.getFullYear()){

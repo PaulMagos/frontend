@@ -12,7 +12,7 @@ var normalForceX = d3.forceX(0).strength(0.005)
 var normalForceY = d3.forceY(0).strength(0.005)
 
 var separatedForceX = d3.forceX(function(d) {
-  if (d[1] > 5){
+  if (d.frequency > 5){
     return window.innerWidth/8
   }else{
     return -window.innerWidth/8
@@ -26,6 +26,7 @@ export default defineComponent({
     data: Array,
     lang: String,
     kindOfWords: String,
+    loading: Boolean,
   },
   data(){
     return{
@@ -57,7 +58,7 @@ export default defineComponent({
 
     // Function which loops over all the data and finds the maximum and minimun frequency of the words
     // then creates a scaler to scale the bubbles in the chart based on the min and max
-    minMax(){
+    get_date_formatted(){
       this.mydata = this.data
       var min = Infinity
       var max = -Infinity
@@ -70,33 +71,7 @@ export default defineComponent({
         }
       });
       radiusScale = d3.scaleLog().domain([min, max]).range([min, 70])
-    },
-
-    get_date_formatted(){
-      this.mydata = this.data
-      var collapsed_data = {}
-      this.mydata.forEach((element) => {
-        const word = this.kindOfWords === 'hashtags' ? element.hashtag : element.word;
-        var elem = [word, element.frequency, element.lang, element.created_at]
-        if (elem[0] in collapsed_data)
-          collapsed_data[elem[0]] += elem[1]
-        else
-          collapsed_data[elem[0]] = elem[1]
-      })
-
-      var new_data = []
-      var other_values = []
-      Object.entries(collapsed_data).forEach(([key, value]) =>{
-        if (value == 1){
-          other_values.push(key)
-        }else{
-          new_data.push([key, value])
-        }
-      })
-      new_data.push(['Others 1', other_values.length, other_values])
-      this.mydata = new_data
-      this.minMax()
-      this.ready(new_data)
+      this.ready(this.mydata)
     },
 
     // Function to separate the bubbles based on a condition
@@ -180,7 +155,7 @@ export default defineComponent({
           .duration(200)
         tooltip
           .style("opacity", 50)
-          .html(d[0] + '<br>' + 'Frequency: ' + d[1] + '<br>' + (d[0]=='Others 1'? d[2].join(' ') : ''))
+          .html(d.word + '<br>' + 'Frequency: ' + d.frequency)
           .style("left", (event.x) + "px")
           .style("top", (event.y) + "px")
       }
@@ -204,7 +179,7 @@ export default defineComponent({
       .join('circle')
         .attr('class', 'bubbles')
         .attr('r', function(d){
-          return radiusScale(d[1])
+          return radiusScale(d.frequency)
         })
         .attr('fill', d3.scaleOrdinal(d3.schemeCategory10).domain(datapoints))
           // -3- Trigger the functions
@@ -218,8 +193,8 @@ export default defineComponent({
         .append('text')
         .attr('class', 'texts')
         .text((d) => {
-          if(d[1]>1)
-          return d[0]
+          if(d.frequency>1)
+          return d.word
         })
         .style('fill', 'white')
 
@@ -229,7 +204,7 @@ export default defineComponent({
         .force('x', normalForceX)
         .force('y', normalForceY)
         .force('collide', d3.forceCollide(function(d){
-              return radiusScale(d[1]) + 2
+              return radiusScale(d.frequency) + 2
         }))
 
       // Set the tick of the simulation
@@ -250,10 +225,10 @@ export default defineComponent({
           return d.x
         })
         .attr("y", function(d){
-          return d.y + radiusScale(d[1])/10
+          return d.y + radiusScale(d.frequency)/10
         })
         .attr('font-size', function(d) {
-          var ip = radiusScale(d[1])/3
+          var ip = radiusScale(d.frequency)/3
           return ip
         })
         .attr('text-anchor', 'middle')

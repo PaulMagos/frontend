@@ -40,7 +40,8 @@
               <span>Split</span>
             </v-card-subtitle>
           <v-btn-toggle v-model="filterModel" shaped mandatory color="secondary">
-            <v-btn style="height: 35px;" depressed rounded @click="setFilter(filter)" v-for="filter in filterItems" :value="filter" flat>
+            <!-- <v-btn style="height: 35px;" depressed rounded @click="setFilter(filter)" v-for="filter in filterItems" :value="filter" flat> -->
+            <v-btn style="height: 35px;" depressed rounded v-for="filter in filterItems" :value="filter" flat>
               <v-icon v-if="filter==`sentiment`">mdi-human</v-icon>
               <v-icon v-else-if="filter==`none`">mdi-cancel</v-icon>
               <v-icon v-else>mdi-flag-variant</v-icon>
@@ -79,21 +80,21 @@
               <span>Granularity</span>
             </v-card-subtitle>
             <v-btn-toggle v-model="timeModel" shaped mandatory color="success">
-              <v-btn style="height: 35px;"  depressed rounded :value=1 flat>
+              <v-btn style="height: 35px;"  depressed rounded value='day' flat>
                 <span>D</span>
                 <v-tooltip
                   activator="parent"
                   location="bottom"
                 >Day</v-tooltip>
               </v-btn>
-              <v-btn style="height: 35px;"  depressed rounded :value=7 flat>
+              <v-btn style="height: 35px;"  depressed rounded value='week' flat>
                 <span>W</span>
                 <v-tooltip
                   activator="parent"
                   location="bottom"
                 >Week</v-tooltip>
               </v-btn>
-              <v-btn style="height: 35px;"  depressed rounded :value=31 flat>
+              <v-btn style="height: 35px;"  depressed rounded value='month' flat>
                 <span>M</span>
                 <v-tooltip
                   activator="parent"
@@ -111,7 +112,7 @@ import vegaEmbed from 'vega-embed'
 import { defineComponent, toRaw } from 'vue';
 import carbon101 from "@/models/carbon101";
 import googlechartsTheme from "@/models/googlecharts";
-import tweets from "@/data/all_tweets_with_sentiment.json"
+import axios from 'axios';
 import vegaModel from "@/models/vegaModel"
 export default defineComponent({
   name: 'MainChart',
@@ -122,8 +123,20 @@ export default defineComponent({
     theme: function() { // watch it
         this.embed()
     },
-    timeModel: function() {
-      this.yourVlSpec.vconcat[0].encoding.x.timeUnit.step = this.timeModel
+    timeModel: async function() {
+      await this.syncMyData()
+      this.embed()
+    },
+    filterModel: async function() {
+      if (this.filterModel=='none'){
+        this.yourVlSpec.encoding.color.legend = null
+      }else{
+        this.yourVlSpec.encoding.color.legend = []
+      }
+      this.yourVlSpec.encoding.order.field = this.filterModel
+      this.yourVlSpec.encoding.color.field = this.filterModel
+      this.yourVlSpec.encoding.color.title = this.filterModel
+      await this.syncMyData()
       this.embed()
     }
   },
@@ -133,19 +146,20 @@ export default defineComponent({
       filterItems: ['none', 'sentiment', 'lang'],
       chartModel: 'bar',
       chartTypes: ['bar', 'area', 'line'],
-      timeModel: 1,
+      timeModel: 'week',
       days: [],
       modal: false,
-      data: tweets,
+      data: null,
       yourVlSpec: vegaModel,
     }
   },
   async created() {
+    this.syncMyData()
     this.embed()
-    this.setFilter(this.filterModel)
   },
   methods: {
     embed(){
+      let time = this.timeModel == 'day'? 1: this.timeModel=='week'? 7:31
       vegaEmbed('#vis',
                 toRaw(this.yourVlSpec),
                 {"actions": false, config: this.theme=='darkTheme'? carbon101 : googlechartsTheme }
@@ -163,7 +177,7 @@ export default defineComponent({
                           ){
                           let currentDate = clicked[0];
                           this.days = []
-                          for (let i = 0; i < this.timeModel; i++) {
+                          for (let i = 0; i < time; i++) {
                             this.days.push(new Date(currentDate.getTime()));
                             currentDate.setDate(currentDate.getDate() + 1);
                           }
@@ -173,76 +187,32 @@ export default defineComponent({
                     });
                 }).catch(console.warn);
     },
-
-    parseData(min = 15){
-      var new_data = [];
-      this.data.forEach(element1 => {
-        if (element1.lang != 'all'){
-          if (element1.total < min){
-            var pos = new_data.findIndex((element) => element.lang == 'other' && element.created_at == element1.created_at && element.sentiment=='positive')
-            var neg = new_data.findIndex((element) => element.lang == 'other' && element.created_at == element1.created_at && element.sentiment=='negative')
-            var neutral = new_data.findIndex((element) => element.lang == 'other' && element.created_at == element1.created_at && element.sentiment=='neutral')
-            if (pos == -1){
-              new_data.push({created_at: element1.created_at, sentiment: 'positive', lang: 'other', value: element1.positive})
-            }else{
-              new_data[pos] = {created_at: element1.created_at, sentiment: 'positive', lang: 'other', value: element1.positive + new_data[pos].value}
-            }
-            if (neg == -1){
-              new_data.push({created_at: element1.created_at, sentiment: 'negative', lang: 'other', value: element1.negative})
-            }else{
-              new_data[neg] = {created_at: element1.created_at, sentiment: 'negative', lang: 'other', value: element1.negative + new_data[neg].value}
-            }
-            if (neutral == -1){
-              new_data.push({created_at: element1.created_at, sentiment: 'neutral', lang: 'other', value: element1.neutral})
-            }else{
-              new_data[neutral] = {created_at: element1.created_at, sentiment: 'neutral', lang: 'other', value: element1.neutral + new_data[neutral].value}
-            }
-          }else{
-            new_data.push({created_at: element1.created_at, sentiment: 'negative', lang: element1.lang, value: element1.negative})
-            new_data.push({created_at: element1.created_at, sentiment: 'neutral', lang: element1.lang, value: element1.neutral})
-            new_data.push({created_at: element1.created_at, sentiment: 'positive', lang: element1.lang, value: element1.positive})
-          }
-        }
-      });
-      new_data = new_data.sort(function(first, second) {
-        return (first.created_at - second.created_at) - (first.value - second.value);
-      });
-      this.yourVlSpec.data.values = new_data
-    },
     onResize() {
-      this.yourVlSpec.vconcat[0].encoding.color.value = this.theme=='darkTheme'? 'white' : 'black'
-      this.yourVlSpec.vconcat[0].width = window.innerWidth/1.25 - 100
-      this.yourVlSpec.vconcat[1].width = window.innerWidth/1.25 - 100
-      this.yourVlSpec.vconcat[0].height = window.innerHeight/1.8 - 60
+      // this.yourVlSpec.encoding.color.value = this.theme=='darkTheme'? 'white' : 'black'
+      this.yourVlSpec.width = window.innerWidth/1.25 - 100
+      this.yourVlSpec.height = window.innerHeight/1.8 - 60
       this.embed()
-    },
-    setFilter(filter) {
-      this.embed()
-      if (filter=='none'){
-        this.yourVlSpec.vconcat[0].encoding.color.condition.legend = null
-      }else{
-        this.yourVlSpec.vconcat[0].encoding.color.condition.legend = []
-      }
-      this.yourVlSpec.vconcat[0].encoding.order.field = filter
-      this.yourVlSpec.vconcat[0].encoding.color.condition.field = filter
-      this.yourVlSpec.vconcat[0].encoding.color.title = filter
     },
     setChart(chart) {
+      this.yourVlSpec.mark.type = chart
       this.embed()
-      this.yourVlSpec.vconcat[0].mark.type = chart
     },
-    setInterval(time){
-      this.embed()
-      this.yourVlSpec.vconcat[0].encoding.x.timeUnit.step = this.timeModel
-    }
+    async syncMyData() {
+      let type = this.filterModel == 'sentiment'? 'all': ''
+      let lang = this.filterModel == 'lang'? 'all' : ''
+      this.data = (await axios.get(`/get_tweets?group=${this.timeModel}&type=${type}&lang=${lang}`)).data
+      while (this.data==undefined){
+          setTimeout(() => {
+          }, (500));
+      }
+      this.yourVlSpec.data.values=this.data
+    },
   },
   beforeDestroy() {
     window.removeEventListener('resize', this.onResize);
   },
   async mounted() {
-    this.parseData()
-
-
+    await this.syncMyData()
     this.$nextTick(() => {
       window.addEventListener('resize', this.onResize)
       this.embed()

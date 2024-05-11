@@ -57,20 +57,12 @@ export default defineComponent({
       return window.innerHeight/1.15
     },
     get_date_formatted(){
-      var collapsed_data = {}
+      var new_data = []
+
       this.data.forEach((element) => {
-        const word = this.kindOfWords === 'hashtags' ? element.hashtag : element.word;
-        var elem = [word, element.frequency]
-        if (elem[0] in collapsed_data)
-          collapsed_data[elem[0]] += elem[1]
-        else
-          collapsed_data[elem[0]] = elem[1]
+        new_data.push([element.word, element.frequency])
       })
 
-      var new_data = []
-      Object.entries(collapsed_data).forEach(([key, value]) =>{
-        new_data.push([key, value])
-      })
       return new_data
     },
 

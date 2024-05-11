@@ -26,20 +26,12 @@ export default defineComponent({
       return window.innerHeight/1.15
     },
     arrangeData(){
-      var collapsed_data = {}
+      var new_data = []
+
       this.data.forEach((element) => {
-        const word = this.kindOfWords === 'hashtags' ? element.hashtag : element.word;
-        var elem = [word, element.frequency]
-        if (elem[0] in collapsed_data)
-          collapsed_data[elem[0]] += elem[1]
-        else
-          collapsed_data[elem[0]] = elem[1]
+        new_data.push({x: element.word,y: element.frequency})
       })
 
-      var new_data = []
-      Object.entries(collapsed_data).forEach(([key, value]) =>{
-        new_data.push({x: key,y: value})
-      })
       this.series[0].data = new_data
       return this.series
     },

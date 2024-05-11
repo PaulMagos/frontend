@@ -4,12 +4,12 @@ const defaultFont = 'IBM Plex Sans,system-ui,-apple-system,BlinkMacSystemFont,".
 const fontWeight = 400;
 
 const darkCategories = [
-  '#8a3ffc',
+  '#ffffff',
   '#33b1ff',
   '#007d79',
   '#ff7eb6',
   '#fa4d56',
-  '#fff1f1',
+  '#8a3ffc',
   '#6fdc8c',
   '#4589ff',
   '#d12771',
