@@ -7,13 +7,12 @@
       rotation-unit="deg"
       :rotation="getRotation"
       animation-easing="linear"
-      animation-overlap="10"
-      font-size-ratio="0.3"
+      font-size-ratio="0.4"
       animation-duration="2500"
       :color="this.theme=='darkTheme'? `white` : `black`"
       class="ml-2"
-      :enter-animation="{opacity: 0}"
-      :leave-animation="{opacity: 0}"
+      enter-animation="bounce"
+      leave-animation="bounce"
       >
     </vue-word-cloud>
 </template>
@@ -22,8 +21,6 @@
 import { defineComponent } from 'vue';
 import * as d3 from "d3";
 import VueWordCloud from 'vuewordcloud';
-import { MainStore } from "../store/app";
-import { mapStores } from 'pinia';
 
 export default defineComponent({
   name: 'WordCloud',
@@ -41,13 +38,14 @@ export default defineComponent({
     }
   },
   created() {
-  },
-  async mounted(){
     this.svg = d3.select("#bubble_chart")
     .append('svg')
     .attr("viewBox", [0, 0, this.get_width(), this.get_height()])
     .append('g')
     .attr("transform", 'translate('+ this.get_width()/2 +',' + this.get_height()/2 + ')')
+  },
+  async mounted(){
+
   },
   methods:{
     get_width(){
@@ -72,7 +70,6 @@ export default defineComponent({
     },
   },
   computed: {
-    ...mapStores(MainStore),
   },
 })
 </script>

@@ -51,7 +51,7 @@
                     class="px-4"
                     color="success"
                     flat
-                    @click="this.getSettedDays(); menu = false; this.syncMyWords(); $refs.BubbleChart.reset_datapoints()"
+                    @click="menu = false; this.syncMyWords();"
                     >
                     <v-icon size="large">mdi-calendar-check</v-icon>
                   </v-btn>
@@ -65,7 +65,6 @@
           label="Language"
           :items="langItems"
           v-model="this.langModel"
-          @update:modelValue="this.syncMyWords(); $refs.BubbleChart.reset_datapoints()"
         ></v-select>
       </v-row>
       <v-row>
@@ -93,16 +92,16 @@
       </v-row>
       <v-row>
           <v-btn-toggle mandatory :color="getWordsTypeColor()" v-model="kindOfWords">
-            <v-btn @click="this.syncMyWords(); $refs.BubbleChart.reset_datapoints()" value="words">
+            <v-btn :disabled="disabled_b['words']" value="words">
               <v-icon :color="getWordsTypeColor('words')" size="x-large">mdi-file-word-box-outline</v-icon>
             </v-btn>
-            <v-btn @click="this.syncMyWords(); $refs.BubbleChart.reset_datapoints()"  value="hashtags">
+            <v-btn :disabled="disabled_b['hashtags']" value="hashtags">
               <v-icon :color="getWordsTypeColor('hashtags')" size="x-large">mdi-pound-box-outline</v-icon>
             </v-btn>
-            <v-btn value="images">
+            <v-btn :disabled="disabled_b['images']" value="images">
               <v-icon :color="getWordsTypeColor('images')" size="x-large">mdi-image-outline</v-icon>
             </v-btn>
-            <v-btn value="videos">
+            <v-btn :disabled="disabled_b['videos']" value="videos">
               <v-icon :color="getWordsTypeColor('videos')" size="x-large">mdi-video-outline</v-icon>
             </v-btn>
           </v-btn-toggle>
@@ -115,9 +114,7 @@
 
 
 <script>
-import { defineComponent, toRaw } from 'vue';
-// import hashtags from '@/data/Tweets_hashtag_counts.json'
-// import words from '@/data/Tweets_word_counts.json'
+import { defineComponent, ref, toRaw } from 'vue';
 import axios from 'axios'
 import BubbleChart from './BubbleChart.vue';
 import WordCloud from './WordCloud.vue';
@@ -129,6 +126,14 @@ export default defineComponent({
     theme: String,
     days: Array,
   },
+  watch:{
+    kindOfWords: function() {
+      this.syncMyWords(false)
+    },
+    langModel: function() {
+      this.syncMyWords(false)
+    },
+  },
   data(){
     return{
       chartType: 'bubble',
@@ -139,11 +144,13 @@ export default defineComponent({
       daysModel: this.days,
       daysModelStr: null,
       kindOfWords: 'words',
+      wordsTypes: ['words', 'hashtags', 'images', 'videos'],
       min_day: this.days[0],
       max_day: this.days[this.days.length-1],
       loading: true,
       data: null,
       animation: ['', '', ''],
+      disabled_b: {},
       combined: 'true',
       simulation: null,
     }
@@ -152,8 +159,7 @@ export default defineComponent({
     await this.syncMyWords()
   },
   async mounted(){
-    this.getSettedDays()
-    await this.syncMyWords()
+    // await this.syncMyWords()
   },
   methods: {
     runAnimation(value){
@@ -163,8 +169,10 @@ export default defineComponent({
         }, 2000);
     },
 
-    async syncMyWords(){
-      this.loading = true
+    async syncMyWords(loading=true){
+      this.check_presence()
+      this.getSettedDays()
+      this.loading = loading
       const source = this.kindOfWords
       var min_day = this.format_date(this.daysModel[0])
       var max_day = this.format_date(this.daysModel[this.daysModel.length-1] || this.daysModel[0])
@@ -173,19 +181,26 @@ export default defineComponent({
 
       this.data = undefined
       while (data==undefined){
-          setTimeout(() => {
-            this.loading = true
-          }, (500));
+        setTimeout(() => {
+          this.loading = true
+        }, (500));
+      }
+
+      if (!data.length>0){
+        this.kindOfWords='words'
+      }
+      this.data = data
+      if (loading==false && this.chartType=='bubble' && data.length>0){
+        this.$refs.BubbleChart.reset_datapoints()
       }
 
       while (langs==undefined){
-          setTimeout(() => {
-            this.loading = true
-          }, (500));
+        setTimeout(() => {
+          this.loading = true
+        }, (500));
       }
 
       this.langItems=langs
-      this.data = data
       this.loading=false
     },
 
@@ -207,6 +222,23 @@ export default defineComponent({
           }else return false
         }else return false
       }else return false
+    },
+
+    check_presence(){
+      var min_day = this.format_date(this.daysModel[0])
+      var max_day = this.format_date(this.daysModel[this.daysModel.length-1] || this.daysModel[0])
+
+      this.wordsTypes.forEach(async (elem) => {
+        const source = elem
+        var res = (await axios.get(`/check_words_presence?source=${source}&from_=${min_day}&to_=${max_day}&lang=${this.langModel}`)).data
+
+        while (res==undefined){
+          setTimeout(() => {
+          }, (100));
+        }
+
+        this.disabled_b[source] = !res
+      })
     },
 
     checkDateGreater(a, b){

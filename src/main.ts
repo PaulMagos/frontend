@@ -12,7 +12,7 @@ import { registerPlugins } from '@/plugins'
 
 const dev = process.env.NODE_ENV !== "production";
 axios.defaults.withCredentials = false;
-axios.defaults.baseURL = dev ? ('https://api.xresearch.it/' ?? "http://127.0.0.1:8000") : 'https://api.xresearch.it/' ?? "https://unipi.it/";
+axios.defaults.baseURL = dev ? "http://127.0.0.1:8000" : 'https://api.xresearch.it/' ?? "https://unipi.it/";
 
 const app = createApp(App)
 

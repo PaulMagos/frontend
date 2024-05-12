@@ -47,6 +47,17 @@ export default defineComponent({
             legend: {
               show: false
             },
+            tooltip: {
+              followCursor: true,
+              style:{
+                fontSize: "16px",
+              },
+            },
+            dataLabels:{
+              style:{
+                fontSize: "18px",
+              },
+            },
             chart: {
               height: 350,
               type: 'treemap',
@@ -54,10 +65,11 @@ export default defineComponent({
                 show: false
               },
               offsetY: -10,
+              background: this.theme=='darkTheme'? 'dark' : 'light',
             },
             theme: {
               mode: this.theme=='darkTheme'? 'dark' : 'light',
-              palette: 'palette7',
+              // palette: 'palette1',
             }
           },
     }

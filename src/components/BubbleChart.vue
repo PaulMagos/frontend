@@ -68,7 +68,7 @@ export default defineComponent({
           max = element.frequency
         }
       });
-      radiusScale = d3.scaleLog().domain([min, max]).range([min, 70])
+      radiusScale = d3.scaleSqrt().domain([min, max]).range([min, 70])
       this.ready(this.data)
     },
 

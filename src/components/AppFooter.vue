@@ -24,7 +24,7 @@ export default defineComponent({
   },
   methods: {
     getTheme(){
-      return this.currtheme? 'dark' : 'ligh'
+      return this.currtheme? 'dark' : 'light'
     }
 
   }
