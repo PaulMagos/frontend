@@ -16,7 +16,7 @@
                 color="error"
                 icon="mdi-close-circle-outline"
                 variant="text"
-                @click="modal = false"
+                @click="modal = false; this.syncMyData()"
               >
               </v-btn>
           </v-card-title>
@@ -125,7 +125,6 @@ export default defineComponent({
     },
     timeModel: async function() {
       await this.syncMyData()
-      this.embed()
     },
     filterModel: async function() {
       if (this.filterModel=='none'){
@@ -137,7 +136,6 @@ export default defineComponent({
       this.yourVlSpec.encoding.color.field = this.filterModel
       this.yourVlSpec.encoding.color.title = this.filterModel
       await this.syncMyData()
-      this.embed()
     }
   },
   data() {
@@ -155,7 +153,6 @@ export default defineComponent({
   },
   async created() {
     this.syncMyData()
-    this.embed()
   },
   methods: {
     embed(){
@@ -165,7 +162,7 @@ export default defineComponent({
                 {"actions": false, config: this.theme=='darkTheme'? carbon101 : googlechartsTheme }
               ).then(result => {
                     result.view.addEventListener('click', (event, item) => {
-                      if (item!=null){
+                      if (item!=null && item.datum!=null){
                         var clicked = Object.keys(item.datum).map(function(key) {
                           return item.datum[key];
                         })
@@ -175,12 +172,16 @@ export default defineComponent({
                             item.mark.marktype!='path' &&
                             item.description.startsWith('created_at')
                           ){
-                          let currentDate = clicked[0];
+                          let currentDate = toRaw(clicked[0]);
+                          if (this.timeModel=='month'){
+                            time = currentDate.getDate();
+                          }
                           this.days = []
                           for (let i = 0; i < time; i++) {
                             this.days.push(new Date(currentDate.getTime()));
-                            currentDate.setDate(currentDate.getDate() + 1);
+                            currentDate.setDate(currentDate.getDate() - 1);
                           }
+                          this.days = this.days.slice().reverse()
                           this.modal = true
                         }
                         }
@@ -206,16 +207,16 @@ export default defineComponent({
           }, (500));
       }
       this.yourVlSpec.data.values=this.data
+      this.embed()
     },
   },
   beforeDestroy() {
     window.removeEventListener('resize', this.onResize);
   },
   async mounted() {
-    await this.syncMyData()
-    this.$nextTick(() => {
+    this.$nextTick(async () => {
       window.addEventListener('resize', this.onResize)
-      this.embed()
+      await this.syncMyData()
     })
   },
 })

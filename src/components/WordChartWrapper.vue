@@ -5,7 +5,7 @@
         <Loading></Loading>
       </v-col>
       <v-col v-else cols="9">
-        <BubbleChart :loading="this.loading" :theme='this.theme' :kindOfWords="kindOfWords" ref="BubbleChart" :data="data" v-if="chartType=='bubble'"></BubbleChart>
+        <BubbleChart :loading="this.loading" :theme='this.theme' :kindOfWords="kindOfWords" ref="BubbleChart" :data="this.data" v-if="chartType=='bubble'"></BubbleChart>
         <WordCloud :loading="this.loading" :theme="this.theme" :kindOfWords="kindOfWords" :data="this.data" v-if="chartType=='wordcloud'"></WordCloud>
         <TreeMap :loading="this.loading" :theme="this.theme" :kindOfWords="kindOfWords" :data="this.data" v-if="chartType=='treemap'"></TreeMap>
       </v-col>
@@ -133,16 +133,15 @@ export default defineComponent({
     return{
       chartType: 'bubble',
       menu: false,
-      daysModelStr: null,
       langModel: 'Italian',
       langItems: [],
       filter_min: 0,
-      daysModel: [this.days[0], this.days[this.days.length-1]],
+      daysModel: this.days,
       daysModelStr: null,
       kindOfWords: 'words',
       min_day: this.days[0],
-      loading: true,
       max_day: this.days[this.days.length-1],
+      loading: true,
       data: null,
       animation: ['', '', ''],
       combined: 'true',
@@ -153,8 +152,8 @@ export default defineComponent({
     await this.syncMyWords()
   },
   async mounted(){
-    await this.syncMyWords()
     this.getSettedDays()
+    await this.syncMyWords()
   },
   methods: {
     runAnimation(value){
