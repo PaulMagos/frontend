@@ -1,11 +1,12 @@
 <template>
     <v-card :theme="theme" elevation="0">
       <MainChart ref="main_chart" :theme="theme"></MainChart>
+      <!-- <TestChart :theme="theme"></TestChart> -->
     </v-card>
 </template>
 
 <script lang="js">
-import MainChart from './MainChart.vue'
+import TestChart from './TestChart.vue'
 import { defineComponent } from 'vue';
 
 export default defineComponent({
