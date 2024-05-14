@@ -68,7 +68,7 @@ export default defineComponent({
           max = element.frequency
         }
       });
-      radiusScale = d3.scaleSqrt().domain([min, max]).range([15, 70])
+      radiusScale = d3.scaleSqrt().domain([min, max]).range([20, 80])
       this.ready(this.data)
     },
 
@@ -150,9 +150,9 @@ export default defineComponent({
       const showTooltip = function(event, d) {
         tooltip
           .transition()
-          .duration(200)
+          .duration(1000)
         tooltip
-          .style("opacity", 50)
+          .style("opacity", 100)
           .html(d.word + '<br>' + 'Frequency: ' + d.frequency)
           .style("left", (event.x) + "px")
           .style("top", (event.y) + "px")
@@ -179,7 +179,7 @@ export default defineComponent({
         .attr('r', function(d){
           return radiusScale(d.frequency)
         })
-        .attr('fill', d3.scaleOrdinal(d3.schemeCategory10).domain(datapoints))
+        .attr('fill', this.theme=='darkTheme'? 'white' : '#008afa')
           // -3- Trigger the functions
       .on("mouseover", showTooltip )
       .on("mousemove", moveTooltip )
@@ -191,10 +191,13 @@ export default defineComponent({
         .append('text')
         .attr('class', 'texts')
         .text((d) => {
-          if(d.frequency>1)
+          if(d.frequency>2)
           return d.word
         })
-        .style('fill', 'white')
+        .style('fill', this.theme=='darkTheme'? 'black' : 'white')
+        .on("mouseover", showTooltip )
+        .on("mousemove", moveTooltip )
+        .on("mouseleave", hideTooltip )
 
 
       // Create simulation with forces which center the bubbles to the center
@@ -226,7 +229,7 @@ export default defineComponent({
           return d.y + radiusScale(d.frequency)/10
         })
         .attr('font-size', function(d) {
-          var ip = radiusScale(d.frequency)/3
+          var ip = radiusScale(d.frequency)/3.5
           return ip
         })
         .attr('text-anchor', 'middle')

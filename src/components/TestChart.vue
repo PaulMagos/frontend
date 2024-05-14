@@ -1,26 +1,25 @@
 <template>
     <Loading v-if="this.loading"></Loading>
-    <v-container v-else id="vegaBubble">
+    <v-container v-else id="StreamChart">
     </v-container>
 </template>
 
 <script>
 import Loading from './Loading.vue'
 import { defineComponent, toRaw } from 'vue'
-import vegaBubble from "@/models/vegaBubble"
-import vegaEmbed from 'vega-embed'
 import carbon101 from "@/models/carbon101";
 import googlechartsTheme from "@/models/googlecharts";
 import axios from 'axios'
+import * as d3 from "d3";
 
 export default defineComponent({
-  name: 'vegaBubbleChart',
+  name: 'StreamChart',
   props:{
     theme: String,
   },
   data(){
     return{
-      vegaChart: vegaBubble,
+      StreamChart: null,
       loading: true,
       data: null,
     }
@@ -30,13 +29,6 @@ export default defineComponent({
   },
   methods:{
     embed(){
-      console.log(this.vegaChart)
-      vegaEmbed('#vegaBubble',
-            toRaw(this.vegaChart),
-            {"actions": false, config: this.theme=='darkTheme'? carbon101 : googlechartsTheme }
-          ).then(result => {
-                result.view.addEventListener('click', (event, item) => { });
-          }).catch(console.warn);
     },
     async updateData() {
       this.data = (await axios.get('/get_words?aggregate=false')).data
@@ -46,12 +38,9 @@ export default defineComponent({
           }, (500));
       }
       this.loading = false
-      this.vegaChart.data.values = this.data
       this.embed()
     },
     onResize() {
-      this.vegaChart.width = window.innerWidth/1.25 - 100
-      this.vegaChart.height = window.innerHeight/1.8 - 60
       this.embed()
     },
   },
