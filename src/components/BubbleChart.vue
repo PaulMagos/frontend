@@ -10,6 +10,9 @@ import * as d3 from "d3";
 var radiusScale = null
 var normalForceX = d3.forceX(0).strength(0.005)
 var normalForceY = d3.forceY(0).strength(0.005)
+var normal_collide = d3.forceCollide(function(d){
+                return radiusScale(d.frequency) + 2
+          })
 
 var separatedForceX = d3.forceX(function(d) {
   if (d.frequency > 5){
@@ -45,6 +48,10 @@ export default defineComponent({
     .attr("viewBox", [0, 0, this.get_width(), this.get_height()])
     .append('g')
     .attr("transform", 'translate('+ this.get_width()/2 +',' + this.get_height()/2 + ')')
+    this.simulation = d3.forceSimulation()
+          .force('x', normalForceX)
+          .force('y', normalForceY)
+          .force('collide', normal_collide)
     this.get_date_formatted()
   },
   methods:{
@@ -75,6 +82,9 @@ export default defineComponent({
         }
       });
       radiusScale = d3.scaleSqrt().domain([min, max]).range([20, 80])
+      this.simulation.nodes(this.data_local)
+            .on('tick', this.ticked)
+      this.simulation.alpha(1).restart()
       this.ready(this.data_local)
     },
 
@@ -101,37 +111,6 @@ export default defineComponent({
           this.simulation.force('x', separatedForceX).alphaTarget(0).restart()
         }, 200);
       }
-    },
-
-
-    // Function to change the data in the 'chart'
-    reset_datapoints(){
-      var bubbles = this.svg.selectAll(".bubbles")
-      var texts = this.svg.selectAll(".texts")
-      var tooltip = d3.select('#bubble_chart').selectAll(".tooltip")
-      // Fade out and remove any existing circles
-      bubbles
-        .transition() // Apply transition for fade-out effect
-        .duration(500) // Set the duration of transition
-        .attr("r", 0)
-        .style("opacity", 0) // Fade out by reducing opacity to 0
-        .remove();
-      texts
-        .transition() // Apply transition for fade-out effect
-        .duration(500) // Set the duration of transition
-        .style("opacity", 0) // Fade out by reducing opacity to 0
-        .remove();
-
-      tooltip
-        .transition() // Apply transition for fade-out effect
-        .duration(500) // Set the duration of transition
-        .style("opacity", 0) // Fade out by reducing opacity to 0
-        .remove();
-
-      setTimeout(() => {
-          this.combined = 'true'
-          this.combinedFunc()
-      }, 520)
     },
 
 
@@ -175,13 +154,6 @@ export default defineComponent({
       }
       const theme = this.theme
 
-      this.simulation = d3.forceSimulation()
-          .force('x', normalForceX)
-          .force('y', normalForceY)
-
-          .force('collide', d3.forceCollide(function(d){
-                return radiusScale(d.frequency) + 2
-          }))
 
 
 
@@ -200,7 +172,7 @@ export default defineComponent({
         enter.append('g')
           .style('opacity', 0)
           .call(g => g
-            .transition().duration(1000)
+            .transition().duration(2000)
               .style('opacity', 1)
           )
           .call(g =>
@@ -210,6 +182,9 @@ export default defineComponent({
               return radiusScale(d.frequency)
             })
             .attr('fill', theme=='darkTheme'? 'white' : '#008afa')
+            .on("mouseover", showTooltip )
+            .on("mousemove", moveTooltip )
+            .on("mouseleave", hideTooltip )
           )
           .call(g =>
             g.append('text')
@@ -218,54 +193,19 @@ export default defineComponent({
               if(d.frequency>2)
               return d.word
             })
+            .transition().duration(1000)
+            .attr('font-size', function(d) {
+              return radiusScale(d.frequency)/3.5
+            })
             .style('fill', theme=='darkTheme'? 'black' : 'white')
             .attr('text-anchor', 'middle')
           )
-          .on("mouseover", showTooltip )
-          .on("mousemove", moveTooltip )
-          .on("mouseleave", hideTooltip )
-        }
 
-
-        this.simulation.nodes(datapoints)
-            .on('tick', ticked)
-
-        function ticked(){
-          const bbls = d3.selectAll('.bubbles')
-          const txts = d3.selectAll('.texts')
-          bbls
-          .attr("cx", function(d){
-            return d.x
-          })
-          .attr("cy", function(d){
-            return d.y
-          })
-
-          txts
-          .attr("x", function(d){
-            return d.x
-          })
-          .attr("y", function(d){
-            return d.y + radiusScale(d.frequency)/10
-          })
-          .attr('text-anchor', 'middle')
         }
 
 
       function updateRects(update) {
         update
-          .call(g => g
-            .transition().duration(2000)
-          )
-          .call(g => g.select('text')
-            .transition().duration(2000)
-            .text((d) => {
-              if(d.frequency>2)
-              return d.word
-            })
-            .style('fill', theme=='darkTheme'? 'black' : 'white')
-            .attr('text-anchor', 'middle')
-          )
           .call(g => g.select('circle')
             .transition().duration(2000)
             .attr('r', function(d){
@@ -273,6 +213,19 @@ export default defineComponent({
             })
             .attr('fill', theme=='darkTheme'? 'white' : '#008afa')
           )
+          .call(g => g.select('text')
+            .transition().duration(1500)
+            .text((d) => {
+              if(d.frequency>2)
+              return d.word
+            })
+            .attr('font-size', function(d) {
+              return radiusScale(d.frequency)/3.5
+            })
+            .style('fill', theme=='darkTheme'? 'black' : 'white')
+            .attr('text-anchor', 'middle')
+          )
+
           .on("mouseover", showTooltip )
           .on("mousemove", moveTooltip )
           .on("mouseleave", hideTooltip )
@@ -282,8 +235,10 @@ export default defineComponent({
         exit
           .call(g =>
           {
-            g.select('circle').transition().duration(1500).attr('r', 0)
-            g.transition().duration(2000)
+            g.select('circle').transition().duration(100).style('fill', 'white')
+            g.select('circle').transition().duration(500).attr('r', 0)
+            g.select('text').transition().duration(500).attr('font-size', 0)
+            g.transition().duration(1000)
                 .style('opacity', 0)
               .remove()
             }
@@ -316,7 +271,28 @@ export default defineComponent({
       //   })
       // }
 
-    }
+    },
+    ticked(){
+          const bbls = d3.selectAll('.bubbles')
+          const txts = d3.selectAll('.texts')
+          console.log(bbls)
+          bbls
+          .attr("cx", function(d){
+            return d.cx? d.cx: d.x
+          })
+          .attr("cy", function(d){
+            return d.cy? d.cy: d.y
+          })
+
+          txts
+          .attr("x", function(d){
+            return d.cx? d.cx: d.x
+          })
+          .attr("y", function(d){
+            return d.cy? d.cy: d.y + radiusScale(d.frequency)/10
+          })
+          .attr('text-anchor', 'middle')
+        }
   },
 })
 </script>
