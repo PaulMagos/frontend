@@ -31,6 +31,7 @@ export default defineComponent({
   data(){
     return{
       menu: false,
+      data_local: null,
       combined: 'true',
       svg: null,
       simulation: null,
@@ -57,10 +58,15 @@ export default defineComponent({
 
     // Function which loops over all the data and finds the maximum and minimun frequency of the words
     // then creates a scaler to scale the bubbles in the chart based on the min and max
-    get_date_formatted(){
+    get_date_formatted(data_){
       var min = Infinity
       var max = -Infinity
-      this.data.forEach(element => {
+      if (data_==undefined){
+        this.data_local = this.data
+      }else{
+        this.data_local = data_
+      }
+      this.data_local.forEach(element => {
         if (element.frequency < min){
           min = element.frequency
         }
@@ -69,7 +75,7 @@ export default defineComponent({
         }
       });
       radiusScale = d3.scaleSqrt().domain([min, max]).range([20, 80])
-      this.ready(this.data)
+      this.ready(this.data_local)
     },
 
     // Function to separate the bubbles based on a condition
@@ -123,7 +129,6 @@ export default defineComponent({
         .remove();
 
       setTimeout(() => {
-          this.get_date_formatted()
           this.combined = 'true'
           this.combinedFunc()
       }, 520)
@@ -168,72 +173,148 @@ export default defineComponent({
           .duration(200)
           .style("opacity", 0)
       }
+      const theme = this.theme
+
+      this.simulation = d3.forceSimulation()
+          .force('x', normalForceX)
+          .force('y', normalForceY)
+
+          .force('collide', d3.forceCollide(function(d){
+                return radiusScale(d.frequency) + 2
+          }))
+
+
 
       // Select the artist in the svg
-      var bubbles = this.svg.selectAll(null)
-      // Set the data
-      .data(datapoints, function(d) { return(d); })
-      // Add a circle with a certain color and radius based on the data frequency
-      .join('circle')
-        .attr('class', 'bubbles')
-        .attr('r', function(d){
-          return radiusScale(d.frequency)
-        })
-        .attr('fill', this.theme=='darkTheme'? 'white' : '#008afa')
-          // -3- Trigger the functions
-      .on("mouseover", showTooltip )
-      .on("mousemove", moveTooltip )
-      .on("mouseleave", hideTooltip )
+      var bubbles = this.svg.selectAll('g')
+        // Set the data
+        .data(datapoints, (d) => d.word)
+        // Add a circle with a certain color and radius based on the data frequency
+        .join(
+          enter => enterRects(enter),
+          update => updateRects(update),
+          exit => exitRects(exit)
+        )
 
-      var texts = this.svg.selectAll(null)
-        .data(datapoints, function(d) {return(d)})
-        .enter()
-        .append('text')
-        .attr('class', 'texts')
-        .text((d) => {
-          if(d.frequency>2)
-          return d.word
-        })
-        .style('fill', this.theme=='darkTheme'? 'black' : 'white')
-        .on("mouseover", showTooltip )
-        .on("mousemove", moveTooltip )
-        .on("mouseleave", hideTooltip )
+      function enterRects(enter) {
+        enter.append('g')
+          .style('opacity', 0)
+          .call(g => g
+            .transition().duration(1000)
+              .style('opacity', 1)
+          )
+          .call(g =>
+            g.append('circle')
+            .attr('class', 'bubbles')
+            .attr('r', function(d){
+              return radiusScale(d.frequency)
+            })
+            .attr('fill', theme=='darkTheme'? 'white' : '#008afa')
+          )
+          .call(g =>
+            g.append('text')
+            .attr('class', 'texts')
+            .text((d) => {
+              if(d.frequency>2)
+              return d.word
+            })
+            .style('fill', theme=='darkTheme'? 'black' : 'white')
+            .attr('text-anchor', 'middle')
+          )
+          .on("mouseover", showTooltip )
+          .on("mousemove", moveTooltip )
+          .on("mouseleave", hideTooltip )
+        }
 
 
-      // Create simulation with forces which center the bubbles to the center
-      this.simulation = d3.forceSimulation()
-        .force('x', normalForceX)
-        .force('y', normalForceY)
-        .force('collide', d3.forceCollide(function(d){
-              return radiusScale(d.frequency) + 2
-        }))
+        this.simulation.nodes(datapoints)
+            .on('tick', ticked)
 
-      // Set the tick of the simulation
-      this.simulation.nodes(datapoints)
-      .on('tick', ticked)
+        function ticked(){
+          const bbls = d3.selectAll('.bubbles')
+          const txts = d3.selectAll('.texts')
+          bbls
+          .attr("cx", function(d){
+            return d.x
+          })
+          .attr("cy", function(d){
+            return d.y
+          })
 
-      function ticked(){
-        bubbles
-        .attr("cx", function(d){
-          return d.x
-        })
-        .attr("cy", function(d){
-          return d.y
-        })
+          txts
+          .attr("x", function(d){
+            return d.x
+          })
+          .attr("y", function(d){
+            return d.y + radiusScale(d.frequency)/10
+          })
+          .attr('text-anchor', 'middle')
+        }
 
-        texts
-        .attr("x", function(d){
-          return d.x
-        })
-        .attr("y", function(d){
-          return d.y + radiusScale(d.frequency)/10
-        })
-        .attr('font-size', function(d) {
-          var ip = radiusScale(d.frequency)/3.5
-          return ip
-        })
-        .attr('text-anchor', 'middle')
+
+      function updateRects(update) {
+        update
+          .call(g => g
+            .transition().duration(2000)
+          )
+          .call(g => g.select('text')
+            .transition().duration(2000)
+            .text((d) => {
+              if(d.frequency>2)
+              return d.word
+            })
+            .style('fill', theme=='darkTheme'? 'black' : 'white')
+            .attr('text-anchor', 'middle')
+          )
+          .call(g => g.select('circle')
+            .transition().duration(2000)
+            .attr('r', function(d){
+              return radiusScale(d.frequency)
+            })
+            .attr('fill', theme=='darkTheme'? 'white' : '#008afa')
+          )
+          .on("mouseover", showTooltip )
+          .on("mousemove", moveTooltip )
+          .on("mouseleave", hideTooltip )
       }
+
+      function exitRects(exit) {
+        exit
+          .call(g =>
+          {
+            g.select('circle').transition().duration(1500).attr('r', 0)
+            g.transition().duration(2000)
+                .style('opacity', 0)
+              .remove()
+            }
+          )
+      }
+
+
+
+
+
+      // // Create simulation with forces which center the bubbles to the center
+      // this.simulation = d3.forceSimulation()
+      //   .force('x', normalForceX)
+      //   .force('y', normalForceY)
+      //   .force('collide', d3.forceCollide(function(d){
+      //         return radiusScale(d.frequency) + 2
+      //   }))
+
+      // // Set the tick of the simulation
+      // this.simulation.nodes(datapoints, d => d.word)
+      // .on('tick', ticked)
+
+      // function ticked(){
+      //   bubbles
+      //   .attr("cx", function(d){
+      //     return d.x
+      //   })
+      //   .attr("cy", function(d){
+      //     return d.y
+      //   })
+      // }
 
     }
   },

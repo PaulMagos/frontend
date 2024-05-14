@@ -169,7 +169,7 @@ export default defineComponent({
         }, 2000);
     },
 
-    async syncMyWords(loading=true){
+    async syncMyWords(loading=false){
       this.check_presence()
       this.getSettedDays()
       this.loading = loading
@@ -180,6 +180,7 @@ export default defineComponent({
       var langs = (await axios.get(`/get_langs_words?source=${source}`)).data
 
       this.data = undefined
+
       while (data==undefined){
         setTimeout(() => {
           this.loading = true
@@ -191,7 +192,7 @@ export default defineComponent({
       }
       this.data = data
       if (loading==false && this.chartType=='bubble' && data.length>0){
-        this.$refs.BubbleChart.reset_datapoints()
+        this.$refs.BubbleChart.get_date_formatted(data)
       }
 
       while (langs==undefined){
