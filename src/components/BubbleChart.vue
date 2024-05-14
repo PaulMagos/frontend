@@ -35,6 +35,7 @@ export default defineComponent({
     return{
       menu: false,
       data_local: null,
+      old_data_local: null,
       combined: 'true',
       svg: null,
       simulation: null,
@@ -81,9 +82,27 @@ export default defineComponent({
           max = element.frequency
         }
       });
+      var thisD3 = null
       radiusScale = d3.scaleSqrt().domain([min, max]).range([20, 80])
       this.simulation.nodes(this.data_local)
             .on('tick', this.ticked)
+            .on('end', () => {
+              thisD3 = d3.select(this)
+            })
+      this.data_local.forEach(elem => {
+        if (this.old_data_local != null){
+          this.old_data_local.forEach(elem2 => {
+            if (elem.word == elem2.word){
+              elem.x = elem2.x
+              elem.y = elem2.y
+              elem.vx = elem2.vx
+              elem.vy = elem2.vy
+            }
+          })
+        }
+      })
+      console.log(this.old_data_local, this.data_local)
+      this.old_data_local = this.data_local
       this.simulation.alpha(1).restart()
       this.ready(this.data_local)
     },
@@ -190,7 +209,7 @@ export default defineComponent({
             g.append('text')
             .attr('class', 'texts')
             .text((d) => {
-              if(d.frequency>2)
+              if(d.frequency>1)
               return d.word
             })
             .transition().duration(1000)
@@ -207,7 +226,7 @@ export default defineComponent({
       function updateRects(update) {
         update
           .call(g => g.select('circle')
-            .transition().duration(2000)
+            .transition().duration(1500)
             .attr('r', function(d){
               return radiusScale(d.frequency)
             })
@@ -216,7 +235,7 @@ export default defineComponent({
           .call(g => g.select('text')
             .transition().duration(1500)
             .text((d) => {
-              if(d.frequency>2)
+              if(d.frequency>1)
               return d.word
             })
             .attr('font-size', function(d) {
@@ -235,10 +254,9 @@ export default defineComponent({
         exit
           .call(g =>
           {
-            g.select('circle').transition().duration(100).style('fill', 'white')
             g.select('circle').transition().duration(500).attr('r', 0)
             g.select('text').transition().duration(500).attr('font-size', 0)
-            g.transition().duration(1000)
+            g.transition().duration(500)
                 .style('opacity', 0)
               .remove()
             }
@@ -275,7 +293,6 @@ export default defineComponent({
     ticked(){
           const bbls = d3.selectAll('.bubbles')
           const txts = d3.selectAll('.texts')
-          console.log(bbls)
           bbls
           .attr("cx", function(d){
             return d.cx? d.cx: d.x
