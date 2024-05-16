@@ -1,7 +1,7 @@
 <template>
     <v-card :theme="theme" elevation="0">
-      <MainChart ref="main_chart" :theme="theme"></MainChart>
-      <!-- <TestChart :theme="theme"></TestChart> -->
+      <!-- <MainChart ref="main_chart" :theme="theme"></MainChart> -->
+      <TestChart :theme="theme"></TestChart>
     </v-card>
 </template>
 
