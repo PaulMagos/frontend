@@ -6,12 +6,19 @@
 
 <script lang="ts">
 import Loading from './Loading.vue'
-import { defineComponent } from 'vue'
+import { defineComponent, toRaw } from 'vue'
 import axios from 'axios'
 import * as d3 from "d3";
 
 const margin = {top: 20, right: 30, bottom: 50, left: 60}
 
+function stackMax(layer) {
+  return d3.max(layer, function(d) { return d[1]; });
+}
+
+function stackMin(layer) {
+  return d3.min(layer, function(d) { return d[0]; });
+}
 
 export default defineComponent({
   name: 'StreamChart',
@@ -35,8 +42,10 @@ export default defineComponent({
     get_height(){
       return window.innerHeight - margin.top - margin.bottom
     },
-    embed(){
-      var data = d3.csvParse(this.data)
+    async embed(){
+      var data = toRaw(this.data)
+      data.columns = Object.keys(data[0])
+
 
       const x = d3.scaleTime()
         .domain(d3.extent(data, function(d) {return d.created_at}))
@@ -52,19 +61,19 @@ export default defineComponent({
 
       // Add Y axis
       const y = d3.scaleLinear()
-        .domain([-100000, 100000])
-        .range([ this.get_height(), 0 ]);
+      .domain([-600, 600])
+      .range([ this.get_height(), 0 ]);
 
       // color palette
       const colorer = d3.scaleOrdinal()
         .domain(keys)
-        .range(d3.schemeDark2);
-
+        .range(d3.schemePaired);
       //stack the data?
       const stackedData = d3.stack()
         .offset(d3.stackOffsetSilhouette)
+        .order(d3.stackOrderNone)
         .keys(keys)
-        (data)
+        (toRaw(data))
 
       // create a tooltip
       const Tooltip = this.svg
@@ -84,7 +93,6 @@ export default defineComponent({
       }
       const mousemove = function(event,d,i) {
         const grp = d.key
-        console.log(grp)
         Tooltip.text(grp)
       }
       const mouseleave = function(event,d) {
@@ -104,20 +112,20 @@ export default defineComponent({
         .data(stackedData)
         .join("path")
           .attr("class", "myArea")
-          .style("fill", function(d) { return colorer(d.key); })
+          .style("fill", (d) => colorer(d.key))
           .attr("d", area)
-          // .on("mouseover", mouseover)
-          // .on("mousemove", mousemove)
-          // .on("mouseleave", mouseleave)
+          .on("mouseover", mouseover)
+          .on("mousemove", mousemove)
+          .on("mouseleave", mouseleave)
     },
     async updateData() {
-      this.data = (await axios.get('/get_words?aggregate=false&pivot=true&min_frequency=10')).data
+      this.data = (await axios.get('/get_words?to_=2024-03-20&aggregate=false&pivot=true&min_frequency=10&filter_type=none')).data
       while (this.data==undefined){
           setTimeout(() => {
             this.loading = true
           }, (500));
       }
-
+      this.data = toRaw(this.data)
       this.loading = false
       this.embed()
     },
@@ -141,7 +149,6 @@ export default defineComponent({
       .append("g")
         .attr("transform",
               `translate(${margin.left}, ${margin.top})`);
-      console.log(this.svg)
       window.addEventListener('resize', this.onResize)
       this.updateData()
     })
