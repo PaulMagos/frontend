@@ -89,6 +89,24 @@
           </v-btn>
         </v-btn-toggle>
       </v-row>
+      <v-row v-if="chart.bubbleMode.mode==1">
+        <v-col>
+          <v-color-picker
+          v-model="chart.bubbleMode.color"
+          hide-inputs
+          :swatches="swatchesModel.swatches"
+          hide-canvas
+          show-swatches
+          ></v-color-picker>
+        </v-col>
+        <v-col>
+          <v-number-input
+          control-variant="split"
+          :min="-1"
+          :model-value="chart.bubbleMode.min_frequency"
+        ></v-number-input>
+        </v-col>
+      </v-row>
       <v-row>
           <v-btn-toggle mandatory :color="wordsModel.buttonColors[wordsModel.source]" v-model="wordsModel.source">
             <v-btn v-for='elem in wordsModel.wordsTypes' :value="elem" :disabled="wordsModel.disabled[elem]">
@@ -121,6 +139,13 @@ export default defineComponent({
     days: Array,
   },
   watch:{
+    theme: function(old_val, new_val){
+      if(new_val!=old_val){
+        const tmp = this.swatchesModel.swatches[3]
+        this.swatchesModel.swatches[3] = this.swatchesModel.themedSwatch
+        this.swatchesModel.themedSwatch = tmp
+      }
+    },
     'wordsModel.source': function (old_value, new_val){
           if (old_value != new_val){
             this.data=undefined
@@ -147,7 +172,7 @@ export default defineComponent({
         chartTypes: ['bubble', 'treemap', 'wordcloud', 'stream'],
         chartIcon: ['mdi-chart-bubble', 'mdi-file-tree', 'mdi-weather-cloudy', 'mdi-view-stream'],
         animation: ['', '', '', ''],
-        bubbleMode: {color: 'orange', min_frequency: 5, mode: 0},
+        bubbleMode: {color: '#FFA700', min_frequency: 5, mode: 0},
       },
       // Language filter model which contains all the informations for changing the source language
       langModel: {
@@ -170,6 +195,16 @@ export default defineComponent({
         disabled: {'words': false, 'hashtags': false, 'images': false, 'videos': false},
         buttonColors: {'words': 'secondary', 'hashtags': 'info', 'images': 'success', 'videos': 'error'}
       },
+
+      // Colors for slitted bubble chart
+      swatchesModel:{
+        swatches: [
+          ['#FF0000'],
+          ['#FFA700'],
+          ['#0087F6'],
+          ['#14202B'],
+        ],
+      },
       filter_min: 0,
       filter_type: 'tf_idf',
       // Menu
@@ -181,9 +216,13 @@ export default defineComponent({
     }
   },
   async created() {
+    if (this.theme=='darkTheme'){
+      this.swatchesModel.swatches.splice(3, 1)
+    }
     await this.syncMyWords()
   },
   async mounted(){
+
     // await this.syncMyWords()
   },
   methods: {

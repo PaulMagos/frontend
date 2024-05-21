@@ -24,6 +24,11 @@ export default defineComponent({
         this.get_date_formatted()
       }
     },
+    'bubbleMode.color': function(old_val, new_val) {
+      if (new_val!=old_val && this.bubbleMode.mode==1){
+        this.recolor()
+      }
+    }
   },
   props:{
     theme: String,
@@ -138,11 +143,20 @@ export default defineComponent({
         this.simulation.force('x', separatedForceX).alphaTarget(0).restart()
       }, 200);
 
+      this.recolor()
+    },
+
+    recolor(){
       this.svg.selectAll('.bubbles')
       .transition().duration(200)
       .attr('fill', (d) => {
           return d.frequency<=this.bubbleMode.min_frequency? this.theme=='darkTheme'? 'white' : '#008afa': this.bubbleMode.color
-        })
+      })
+      this.svg.selectAll('.texts')
+      .transition().duration(200)
+      .attr('fill', (d) => {
+          return d.frequency<=this.bubbleMode.min_frequency? this.theme=='darkTheme'? 'white' : '#008afa': this.bubbleMode.color
+      })
     },
 
 
