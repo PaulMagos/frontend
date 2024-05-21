@@ -103,7 +103,7 @@
           <v-number-input
           control-variant="split"
           :min="-1"
-          :model-value="chart.bubbleMode.min_frequency"
+          v-model="chart.bubbleMode.min_frequency"
         ></v-number-input>
         </v-col>
       </v-row>
@@ -132,8 +132,12 @@ import BubbleChart from './BubbleChart.vue';
 import WordCloud from './WordCloud.vue';
 import moment from 'moment'
 import StreamChart from './StreamChart.vue';
+import { VNumberInput } from 'vuetify/labs/VNumberInput'
 export default defineComponent({
   name: 'WordChartWrapper',
+  components: {
+    VNumberInput,
+  },
   props: {
     theme: String,
     days: Array,

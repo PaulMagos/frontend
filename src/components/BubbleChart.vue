@@ -28,6 +28,11 @@ export default defineComponent({
       if (new_val!=old_val && this.bubbleMode.mode==1){
         this.recolor()
       }
+    },
+    'bubbleMode.min_frequency': function(old_val, new_val) {
+      if (new_val!=old_val && this.bubbleMode.mode==1){
+        this.splitByFrequency()
+      }
     }
   },
   props:{
