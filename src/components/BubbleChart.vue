@@ -1,5 +1,6 @@
 <template>
-  <div id="bubble_chart" class="ml-2">
+  <Loading v-if="loading"></Loading>
+  <div v-else id="bubble_chart" class="ml-2">
   </div>
 </template>
 
@@ -14,20 +15,21 @@ var normal_collide = d3.forceCollide(function(d){
                 return radiusScale(d.frequency) + 2
           })
 
-var separatedForceX = d3.forceX(function(d) {
-  if (d.frequency > 5){
-    return window.innerWidth/8
-  }else{
-    return -window.innerWidth/8
-  }
-}).strength(0.005)
 
 export default defineComponent({
   name: 'BubbleChart',
+  watch:{
+    data: function(old_val, new_val){
+      if (old_val!=undefined){
+        this.get_date_formatted()
+      }
+    },
+  },
   props:{
     theme: String,
     data: Array,
     lang: String,
+    bubbleMode: Object,
     kindOfWords: String,
     loading: Boolean,
   },
@@ -35,8 +37,6 @@ export default defineComponent({
     return{
       menu: false,
       data_local: null,
-      old_data_local: null,
-      combined: 'true',
       svg: null,
       simulation: null,
     }
@@ -70,66 +70,79 @@ export default defineComponent({
       var min = Infinity
       var max = -Infinity
       if (data_==undefined){
-        this.data_local = this.data
-      }else{
-        this.data_local = data_
+        data_ = this.data
       }
-      this.data_local.forEach(element => {
-        if (element.frequency < min){
-          min = element.frequency
-        }
-        if (element.frequency > max){
-          max = element.frequency
-        }
-      });
-      var thisD3 = null
-      radiusScale = d3.scaleSqrt().domain([min, max]).range([20, 80])
-      this.simulation.nodes(this.data_local)
-            .on('tick', this.ticked)
-            .on('end', () => {
-              thisD3 = d3.select(this)
+      if (data_!=undefined){
+        data_.forEach(element => {
+          if (element.frequency < min){
+            min = element.frequency
+          }
+          if (element.frequency > max){
+            max = element.frequency
+          }
+        });
+        radiusScale = d3.scaleSqrt().domain([min, max]).range([20, 80])
+        this.simulation.nodes(data_)
+              .on('tick', this.ticked)
+        data_.forEach(elem => {
+          if (this.data_local != null){
+            this.data_local.forEach(elem2 => {
+              if (elem.word == elem2.word){
+                elem.x = elem2.x
+                elem.y = elem2.y
+                elem.vx = elem2.vx
+                elem.vy = elem2.vy
+              }
             })
-      this.data_local.forEach(elem => {
-        if (this.old_data_local != null){
-          this.old_data_local.forEach(elem2 => {
-            if (elem.word == elem2.word){
-              elem.x = elem2.x
-              elem.y = elem2.y
-              elem.vx = elem2.vx
-              elem.vy = elem2.vy
-            }
-          })
-        }
-      })
-      console.log(this.old_data_local, this.data_local)
-      this.old_data_local = this.data_local
-      this.simulation.alpha(1).restart()
-      this.ready(this.data_local)
+          }
+        })
+        this.data_local = data_
+        this.simulation.alpha(1).restart()
+        this.ready(data_)
+        setTimeout(() => {
+          if (this.bubbleMode.mode==1){
+            this.splitByFrequency(this.bubbleMode.min_frequency, this.bubbleMode.color)
+          }
+        }, 500)
+      }
     },
 
-    // Function to separate the bubbles based on a condition
-    combinedFunc(){
-      // If all together push all in the middle,
-      // initially really fast and then stop the inertia after 60 millisec
-      if (this.combined == 'true'){
-        this.simulation.force('x', normalForceX).alphaTarget(100).restart()
+    resetCenter(){
+      this.simulation.force('x', normalForceX).alphaTarget(100).restart()
         setTimeout(() => {
           this.simulation.force('x', normalForceX).alphaTarget(-20).restart()
         }, 100);
         setTimeout(() => {
           this.simulation.force('x', normalForceX).alphaTarget(0).restart()
         }, 200);
-      // If splitted push on the left and the right base on the condition,
-      // initially really fast and then stop the inertia after 60 millisec
-      }else{
-        this.simulation.force('x', separatedForceX).alphaTarget(100).restart()
-        setTimeout(() => {
-          this.simulation.force('x', separatedForceX).alphaTarget(-20).restart()
-        }, 100);
-        setTimeout(() => {
-          this.simulation.force('x', separatedForceX).alphaTarget(0).restart()
-        }, 200);
-      }
+
+      this.svg.selectAll('.bubbles')
+      .transition().duration(1000)
+      .attr('fill', this.theme=='darkTheme'? 'white' : '#008afa')
+    },
+
+    splitByFrequency(){
+      var separatedForceX = d3.forceX((d) => {
+        if (d.frequency > this.bubbleMode.min_frequency){
+          return window.innerWidth/8
+        }else{
+          return -window.innerWidth/8
+        }
+      }).strength(0.005)
+
+      this.simulation.force('x', separatedForceX).alphaTarget(100).restart()
+      setTimeout(() => {
+        this.simulation.force('x', separatedForceX).alphaTarget(-20).restart()
+      }, 100);
+      setTimeout(() => {
+        this.simulation.force('x', separatedForceX).alphaTarget(0).restart()
+      }, 200);
+
+      this.svg.selectAll('.bubbles')
+      .transition().duration(200)
+      .attr('fill', (d) => {
+          return d.frequency<=this.bubbleMode.min_frequency? this.theme=='darkTheme'? 'white' : '#008afa': this.bubbleMode.color
+        })
     },
 
 
@@ -143,7 +156,7 @@ export default defineComponent({
         .attr("class", "tooltip")
         .style("position", "absolute")
         .style("background-color", "#16202b")
-        .style("border-radius", "5px")
+        .style("border-radius", "10px")
         .style("border", "solid")
         .style("border-color", 'white')
         .style("padding", "10px")
@@ -173,7 +186,14 @@ export default defineComponent({
       }
       const theme = this.theme
 
+      tooltip.on("mouseover", () => {
+        tooltip
+          .transition()
+          .duration(200)
+          .style("opacity", 0)
+      })
 
+      const bubbleMode = this.bubbleMode
 
 
       // Select the artist in the svg
@@ -191,7 +211,7 @@ export default defineComponent({
         enter.append('g')
           .style('opacity', 0)
           .call(g => g
-            .transition().duration(2000)
+            .transition().duration(600)
               .style('opacity', 1)
           )
           .call(g =>
@@ -200,10 +220,10 @@ export default defineComponent({
             .attr('r', function(d){
               return radiusScale(d.frequency)
             })
-            .attr('fill', theme=='darkTheme'? 'white' : '#008afa')
-            .on("mouseover", showTooltip )
-            .on("mousemove", moveTooltip )
-            .on("mouseleave", hideTooltip )
+            // .attr('fill', theme=='darkTheme'? 'white' : '#008afa')
+            .attr('fill', (d) => {
+              return bubbleMode.mode==1? d.frequency<=bubbleMode.min_frequency? theme=='darkTheme'? 'white' : '#008afa': bubbleMode.color : theme=='darkTheme'? 'white' : '#008afa'
+            })
           )
           .call(g =>
             g.append('text')
@@ -212,28 +232,32 @@ export default defineComponent({
               if(d.frequency>1)
               return d.word
             })
-            .transition().duration(1000)
+            .transition().duration(600)
             .attr('font-size', function(d) {
               return radiusScale(d.frequency)/3.5
             })
             .style('fill', theme=='darkTheme'? 'black' : 'white')
             .attr('text-anchor', 'middle')
-          )
 
+          )
+          .on("mouseover", showTooltip )
+          .on("mousemove", moveTooltip )
+          .on("mouseleave", hideTooltip )
         }
 
 
       function updateRects(update) {
         update
           .call(g => g.select('circle')
-            .transition().duration(1500)
+            .transition().duration(600)
             .attr('r', function(d){
               return radiusScale(d.frequency)
+            }).attr('fill', (d) => {
+              return bubbleMode.mode==1? d.frequency<=bubbleMode.min_frequency? theme=='darkTheme'? 'white' : '#008afa': bubbleMode.color : theme=='darkTheme'? 'white' : '#008afa'
             })
-            .attr('fill', theme=='darkTheme'? 'white' : '#008afa')
           )
           .call(g => g.select('text')
-            .transition().duration(1500)
+            .transition().duration(600)
             .text((d) => {
               if(d.frequency>1)
               return d.word
@@ -262,33 +286,6 @@ export default defineComponent({
             }
           )
       }
-
-
-
-
-
-      // // Create simulation with forces which center the bubbles to the center
-      // this.simulation = d3.forceSimulation()
-      //   .force('x', normalForceX)
-      //   .force('y', normalForceY)
-      //   .force('collide', d3.forceCollide(function(d){
-      //         return radiusScale(d.frequency) + 2
-      //   }))
-
-      // // Set the tick of the simulation
-      // this.simulation.nodes(datapoints, d => d.word)
-      // .on('tick', ticked)
-
-      // function ticked(){
-      //   bubbles
-      //   .attr("cx", function(d){
-      //     return d.x
-      //   })
-      //   .attr("cy", function(d){
-      //     return d.y
-      //   })
-      // }
-
     },
     ticked(){
           const bbls = d3.selectAll('.bubbles')

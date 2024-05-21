@@ -1,13 +1,15 @@
 <template>
   <div>
     <v-row>
-      <v-col v-if="this.loading" cols="9">
-        <Loading></Loading>
-      </v-col>
-      <v-col v-else cols="9">
-        <BubbleChart :loading="this.loading" :theme='this.theme' :kindOfWords="kindOfWords" ref="BubbleChart" :data="this.data" v-if="chartType=='bubble'"></BubbleChart>
-        <WordCloud :loading="this.loading" :theme="this.theme" :kindOfWords="kindOfWords" :data="this.data" v-if="chartType=='wordcloud'"></WordCloud>
-        <TreeMap :loading="this.loading" :theme="this.theme" :kindOfWords="kindOfWords" :data="this.data" v-if="chartType=='treemap'"></TreeMap>
+      <v-col cols="9">
+          <BubbleChart :bubbleMode='this.chart.bubbleMode' :theme='this.theme' :kindOfWords="wordsModel.source" ref="BubbleChart" :data="this.data" v-if="chart.chartType=='bubble'"></BubbleChart>
+        <Transition>
+          <WordCloud :theme="this.theme" :kindOfWords="wordsModel.source" :data="this.data" v-if="chart.chartType=='wordcloud'"></WordCloud>
+        </Transition>
+        <TreeMap :theme="this.theme" :kindOfWords="wordsModel.source" :data="this.data" v-if="chart.chartType=='treemap'"></TreeMap>
+        <Transition>
+          <StreamChart :theme="this.theme" :kindOfWords="wordsModel.source" :data="this.streamdata" :aggredated_data="this.data" v-if="chart.chartType=='stream'"></StreamChart>
+        </Transition>
       </v-col>
       <v-col cols="3">
         <v-row>
@@ -18,7 +20,7 @@
         >
           <template v-slot:activator="{ props: activatorProps }">
             <v-text-field
-              v-model="daysModelStr"
+              v-model="daysModel.days_as_String"
               prepend-icon="mdi-calendar"
               readonly
               v-bind="activatorProps"
@@ -27,7 +29,7 @@
           <template v-slot:default="{ isActive }">
                 <v-card>
                   <v-date-picker
-                      v-model="this.daysModel"
+                      v-model="this.daysModel.local_days"
                       show-adjacent-months
                       no-title
                       hide-header
@@ -37,7 +39,6 @@
                       >
                     </v-date-picker>
                     <v-card-actions>
-
                       <v-btn
                       class="px-4"
                       color="error"
@@ -51,7 +52,7 @@
                     class="px-4"
                     color="success"
                     flat
-                    @click="menu = false; this.syncMyWords();"
+                    @click="menu = false; daysModel.old_date_confirmed = false"
                     >
                     <v-icon size="large">mdi-calendar-check</v-icon>
                   </v-btn>
@@ -63,46 +64,39 @@
       <v-row>
         <v-select
           label="Language"
-          :items="langItems"
-          v-model="this.langModel"
+          :items="langModel.langItems"
+          v-model="this.langModel.language"
         ></v-select>
       </v-row>
       <v-row>
-        <v-btn-toggle mandatory v-model="chartType">
-          <v-btn @click="runAnimation(0)" value="bubble">
-            <v-icon size="x-large">mdi-chart-bubble {{ animation[0] }}</v-icon>
-          </v-btn>
-          <v-btn @click="runAnimation(1)" value="treemap">
-            <v-icon size="x-large">mdi-file-tree {{ animation[1] }}</v-icon>
-          </v-btn>
-          <v-btn @click="runAnimation(2)" value="wordcloud">
-            <v-icon size="x-large">mdi-weather-cloudy {{ animation[2] }}</v-icon>
+        <v-btn-toggle mandatory v-model="chart.chartType">
+          <v-btn @click="runAnimation(i)" v-for="el, i in chart.chartTypes" :value="el">
+            <v-icon size="x-large">{{chart.chartIcon[i]}} {{ chart.animation[i] }}</v-icon>
+            <v-tooltip
+                  activator="parent"
+                  location="bottom"
+            >{{ el[0].toUpperCase() + el.slice(1) }}</v-tooltip>
           </v-btn>
         </v-btn-toggle>
       </v-row>
-      <v-row v-if="chartType=='bubble'">
-        <v-btn-toggle mandatory v-model="combined">
-          <v-btn @click="$refs.BubbleChart.combined = 'true'; $refs.BubbleChart.combinedFunc()" value="true">
-            <v-icon>mdi-pencil</v-icon>
+      <v-row v-if="chart.chartType=='bubble'">
+        <v-btn-toggle mandatory v-model="chart.bubbleMode.mode">
+          <v-btn @click="$refs.BubbleChart.resetCenter()" :value=0>
+            <v-icon>mdi-close</v-icon>
           </v-btn>
-          <v-btn @click="$refs.BubbleChart.combined = 'false'; $refs.BubbleChart.combinedFunc()" value="false">
+          <v-btn @click="$refs.BubbleChart.splitByFrequency(chart.bubbleMode.min_frequency, color=chart.bubbleMode.color)" :value=1>
             <v-icon>mdi-vector-combine</v-icon>
           </v-btn>
         </v-btn-toggle>
       </v-row>
       <v-row>
-          <v-btn-toggle mandatory :color="getWordsTypeColor()" v-model="kindOfWords">
-            <v-btn :disabled="disabled_b['words']" value="words">
-              <v-icon :color="getWordsTypeColor('words')" size="x-large">mdi-file-word-box-outline</v-icon>
-            </v-btn>
-            <v-btn :disabled="disabled_b['hashtags']" value="hashtags">
-              <v-icon :color="getWordsTypeColor('hashtags')" size="x-large">mdi-pound-box-outline</v-icon>
-            </v-btn>
-            <v-btn :disabled="disabled_b['images']" value="images">
-              <v-icon :color="getWordsTypeColor('images')" size="x-large">mdi-image-outline</v-icon>
-            </v-btn>
-            <v-btn :disabled="disabled_b['videos']" value="videos">
-              <v-icon :color="getWordsTypeColor('videos')" size="x-large">mdi-video-outline</v-icon>
+          <v-btn-toggle mandatory :color="wordsModel.buttonColors[wordsModel.source]" v-model="wordsModel.source">
+            <v-btn v-for='elem in wordsModel.wordsTypes' :value="elem" :disabled="wordsModel.disabled[elem]">
+              <v-icon :color="wordsModel.source!=elem? wordsModel.buttonColors[elem]:''" size="x-large">{{wordsModel.wordsIcons[elem]}}</v-icon>
+              <v-tooltip
+                  activator="parent"
+                  location="bottom"
+              >{{ elem[0].toUpperCase() + elem.slice(1) }}</v-tooltip>
             </v-btn>
           </v-btn-toggle>
         </v-row>
@@ -119,7 +113,7 @@ import axios from 'axios'
 import BubbleChart from './BubbleChart.vue';
 import WordCloud from './WordCloud.vue';
 import moment from 'moment'
-import Loading from './Loading.vue'
+import StreamChart from './StreamChart.vue';
 export default defineComponent({
   name: 'WordChartWrapper',
   props: {
@@ -127,31 +121,62 @@ export default defineComponent({
     days: Array,
   },
   watch:{
-    kindOfWords: function() {
-      this.syncMyWords(false)
+    'wordsModel.source': function (old_value, new_val){
+          if (old_value != new_val){
+            this.data=undefined
+            this.syncMyWords()
+          }
     },
-    langModel: function() {
-      this.syncMyWords(false)
+    'langModel.language': function (old_value, new_val){
+          if (old_value != new_val){
+            this.syncMyWords()
+          }
+    },
+    'daysModel.old_date_confirmed': function (old_value, new_val){
+          if (old_value != new_val){
+            this.syncMyWords()
+            this.daysModel.old_date_confirmed=true
+          }
     },
   },
   data(){
     return{
-      chartType: 'bubble',
-      menu: false,
-      langModel: 'Italian',
-      langItems: [],
+      // Chart model which for the current chart setting and possble charts that we can select
+      chart: {
+        chartType: 'bubble',
+        chartTypes: ['bubble', 'treemap', 'wordcloud', 'stream'],
+        chartIcon: ['mdi-chart-bubble', 'mdi-file-tree', 'mdi-weather-cloudy', 'mdi-view-stream'],
+        animation: ['', '', '', ''],
+        bubbleMode: {color: 'orange', min_frequency: 5, mode: 0},
+      },
+      // Language filter model which contains all the informations for changing the source language
+      langModel: {
+        language: 'Italian',
+        langItems: [],
+      },
+      // Timeline filter model which contains all the informations for changing the days from which we want to see the words frequency
+      daysModel: {
+        local_days: this.days,
+        days_as_String: null,
+        min_day: this.days[0],
+        max_day: this.days[this.days.length-1],
+        old_date_confirmed: true,
+      },
+      // Words model which contains all the informations for changing the source of the words and frequencies, and also buttons information (e.g. colors)
+      wordsModel: {
+        source: 'words',
+        wordsTypes: ['words', 'hashtags', 'images', 'videos'],
+        wordsIcons: {'words': 'mdi-file-word-box-outline', 'hashtags': 'mdi-pound-box-outline', 'images': 'mdi-image-outline', 'videos': 'mdi-video-outline'},
+        disabled: {'words': false, 'hashtags': false, 'images': false, 'videos': false},
+        buttonColors: {'words': 'secondary', 'hashtags': 'info', 'images': 'success', 'videos': 'error'}
+      },
       filter_min: 0,
-      daysModel: this.days,
-      daysModelStr: null,
-      kindOfWords: 'words',
-      wordsTypes: ['words', 'hashtags', 'images', 'videos'],
-      min_day: this.days[0],
-      max_day: this.days[this.days.length-1],
-      loading: true,
+      filter_type: 'tf_idf',
+      // Menu
+      menu: false,
       data: null,
-      animation: ['', '', ''],
-      disabled_b: {},
-      combined: 'true',
+      streamdata: null,
+      min_frequency: -1,
       simulation: null,
     }
   },
@@ -163,46 +188,37 @@ export default defineComponent({
   },
   methods: {
     runAnimation(value){
-      this.animation[value] = 'mdi-spin'
+      this.chart.animation[value] = 'mdi-spin'
       setTimeout(() => {
-          this.animation[value] = ''
+          this.chart.animation[value] = ''
         }, 2000);
     },
 
-    async syncMyWords(loading=false){
+    async syncMyWords(){
       this.check_presence()
       this.getSettedDays()
-      this.loading = loading
-      const source = this.kindOfWords
-      var min_day = this.format_date(this.daysModel[0])
-      var max_day = this.format_date(this.daysModel[this.daysModel.length-1] || this.daysModel[0])
-      var data = (await axios.get(`/get_words?source=${source}&from_=${min_day}&to_=${max_day}&lang=${this.langModel}`)).data
+      const source = this.wordsModel.source
+      const min_day = this.format_date(this.daysModel.local_days[0])
+      const max_day = this.format_date(this.daysModel.local_days[this.daysModel.local_days.length-1] || this.daysModel.local_days[0])
+      this.data = (await axios.get(`/get_words?source=${source}&from_=${min_day}&to_=${max_day}&lang=${this.langModel.language}`)).data
+      this.streamdata = (await axios.get(`/get_words?source=${source}&from_=${min_day}&to_=${max_day}&lang=${this.langModel.language}&aggregate=false&pivot=true`)).data
       var langs = (await axios.get(`/get_langs_words?source=${source}`)).data
 
-      this.data = undefined
 
-      while (data==undefined){
-        setTimeout(() => {
-          this.loading = true
-        }, (500));
+      if (this.data!=undefined && this.data.length==0){
+        this.wordsModel.source='words'
       }
 
-      if (!data.length>0){
-        this.kindOfWords='words'
-      }
-      this.data = data
-      if (loading==false && this.chartType=='bubble' && data.length>0){
-        this.$refs.BubbleChart.get_date_formatted(data)
-      }
+      // if (this.chart.chartType=='bubble'){
+      //   this.$refs.BubbleChart.get_date_formatted(this.data)
+      // }
 
       while (langs==undefined){
         setTimeout(() => {
-          this.loading = true
         }, (500));
       }
 
-      this.langItems=langs
-      this.loading=false
+      this.langModel.langItems=langs
     },
 
     format_date(value){
@@ -226,19 +242,19 @@ export default defineComponent({
     },
 
     check_presence(){
-      var min_day = this.format_date(this.daysModel[0])
-      var max_day = this.format_date(this.daysModel[this.daysModel.length-1] || this.daysModel[0])
+      var min_day = this.format_date(this.daysModel.local_days[0])
+      var max_day = this.format_date(this.daysModel.local_days[this.daysModel.local_days.length-1] || this.daysModel.local_days[0])
 
-      this.wordsTypes.forEach(async (elem) => {
+      this.wordsModel.wordsTypes.forEach(async (elem) => {
         const source = elem
-        var res = (await axios.get(`/check_words_presence?source=${source}&from_=${min_day}&to_=${max_day}&lang=${this.langModel}`)).data
+        var res = (await axios.get(`/check_words_presence?source=${source}&from_=${min_day}&to_=${max_day}&lang=${this.langModel.language}`)).data
 
         while (res==undefined){
           setTimeout(() => {
           }, (100));
         }
 
-        this.disabled_b[source] = !res
+        this.wordsModel.disabled[source] = !res
       })
     },
 
@@ -256,45 +272,16 @@ export default defineComponent({
       }else return false
     },
 
-    getWordsTypeColor(value){
-      if (value){
-        if (value == this.kindOfWords){
-            return ''
-        }
-        switch(value){
-          case 'words':
-            return 'secondary'
-          case 'hashtags':
-            return 'info'
-          case 'images':
-            return 'success'
-          case 'videos':
-            return 'error'
-        }
-      }else{
-        switch(this.kindOfWords){
-          case 'words':
-            return 'secondary'
-          case 'hashtags':
-            return 'info'
-          case 'images':
-            return 'success'
-          case 'videos':
-            return 'error'
-        }
-      }
-    },
-
     getSettedDays(){
-      var len = this.daysModel.length
+      var len = this.daysModel.local_days.length
       if (len == 1){
-        this.daysModel[1] = this.daysModel[0]
+        this.daysModel.local_days[1] = this.daysModel.local_days[0]
       }
-      if (this.daysModel[0].getTime() == this.daysModel[1].getTime()){
-        this.daysModelStr = this.daysModel[0].getFullYear() + '.'  + ((this.daysModel[0].getMonth() + 1) > 9 ? '' : '0') + (this.daysModel[0].getMonth() + 1) + '.' + this.daysModel[0].getDate()
+      if (this.daysModel.local_days[0].getTime() == this.daysModel.local_days[1].getTime()){
+        this.daysModel.days_as_String = this.daysModel.local_days[0].getFullYear() + '.'  + ((this.daysModel.local_days[0].getMonth() + 1) > 9 ? '' : '0') + (this.daysModel.local_days[0].getMonth() + 1) + '.' + this.daysModel.local_days[0].getDate()
       }else{
-        this.daysModelStr = this.daysModel[0].getFullYear() + '.'  + ((this.daysModel[0].getMonth() + 1) > 9 ? '' : '0') + (this.daysModel[0].getMonth() + 1) + '.' + this.daysModel[0].getDate() +
-        ' ~ ' + this.daysModel[len-1].getFullYear() + '.'  + ((this.daysModel[len-1].getMonth() + 1) > 9 ? '' : '0') + (this.daysModel[len-1].getMonth() + 1) + '.' + this.daysModel[len-1].getDate()
+        this.daysModel.days_as_String = this.daysModel.local_days[0].getFullYear() + '.'  + ((this.daysModel.local_days[0].getMonth() + 1) > 9 ? '' : '0') + (this.daysModel.local_days[0].getMonth() + 1) + '.' + this.daysModel.local_days[0].getDate() +
+        ' ~ ' + this.daysModel.local_days[len-1].getFullYear() + '.'  + ((this.daysModel.local_days[len-1].getMonth() + 1) > 9 ? '' : '0') + (this.daysModel.local_days[len-1].getMonth() + 1) + '.' + this.daysModel.local_days[len-1].getDate()
       }
     },
   },
@@ -306,4 +293,15 @@ export default defineComponent({
   .v-btn.active .v-icon {
     transform: rotate(-180deg);
   }
+.v-enter-active{
+  transition: opacity 4s ease;
+}
+.v-leave-active,
+
+.v-enter-from{
+  opacity: 0;
+}
+.v-leave-to {
+  opacity: 0;
+}
 </style>

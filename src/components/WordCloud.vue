@@ -1,5 +1,7 @@
 <template>
+    <Loading v-if="loading"></Loading>
     <vue-word-cloud
+      v-else
       :style="`height: ` + (this.get_height()) + `px; width: `+ (this.get_width()-10) + `px; cursor: pointer;`"
       :words="get_date_formatted()"
       font-family="serif"
@@ -24,6 +26,16 @@ import VueWordCloud from 'vuewordcloud';
 
 export default defineComponent({
   name: 'WordCloud',
+  watch:{
+    data: function(old_val, new_val){
+      if (old_val!=undefined){
+        this.loading=false
+        this.get_date_formatted()
+      }else{
+        this.loading=true
+      }
+    },
+  },
   components:{
     [VueWordCloud.name]: VueWordCloud,
   },
@@ -34,18 +46,13 @@ export default defineComponent({
   },
   data(){
     return{
-
+      loading: false,
+      local_data: [],
     }
   },
   created() {
-    this.svg = d3.select("#bubble_chart")
-    .append('svg')
-    .attr("viewBox", [0, 0, this.get_width(), this.get_height()])
-    .append('g')
-    .attr("transform", 'translate('+ this.get_width()/2 +',' + this.get_height()/2 + ')')
   },
   async mounted(){
-
   },
   methods:{
     get_width(){
@@ -57,11 +64,13 @@ export default defineComponent({
     get_date_formatted(){
       var new_data = []
 
-      this.data.forEach((element) => {
-        new_data.push([element.word, element.frequency])
-      })
+      if (!this.loading){
+        this.data.forEach((element) => {
+          new_data.push([element.word, element.frequency])
+        })
 
-      return new_data
+        return this.local_data = new_data
+      }
     },
 
     getRotation() {

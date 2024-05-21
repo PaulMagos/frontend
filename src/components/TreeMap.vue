@@ -1,5 +1,6 @@
 <template>
-  <apexchart class="ml-2 mr-2" :width="get_width()" :height="get_height()" :options="chartOptions" :series="arrangeData()">
+  <Loading v-if="loading"></Loading>
+  <apexchart v-else class="ml-2 mr-2" :width="get_width()" :height="get_height()" :options="chartOptions" :series="this.series">
   </apexchart>
 </template>
 
@@ -10,6 +11,19 @@ import VueApexCharts from "vue3-apexcharts";
 
 export default defineComponent({
   name: 'TreeMap',
+  watch:{
+    data: function(old_val, new_val){
+      if (old_val!=undefined){
+        this.loading=false
+        this.arrangeData()
+      }else{
+        this.loading=true
+      }
+    },
+  },
+  created(){
+    this.arrangeData()
+  },
   components:{
     apexchart: VueApexCharts
   },
@@ -28,16 +42,18 @@ export default defineComponent({
     arrangeData(){
       var new_data = []
 
-      this.data.forEach((element) => {
-        new_data.push({x: element.word,y: element.frequency})
-      })
+      if (!this.loading){
+        this.data.forEach((element) => {
+          new_data.push({x: element.word,y: element.frequency})
+        })
 
-      this.series[0].data = new_data
-      return this.series
+        this.series[0].data = new_data
+      }
     },
   },
   data(){
     return{
+      loading: false,
       series: [
             {
               data: []
