@@ -8,8 +8,10 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AboutUs: typeof import('./src/components/AboutUs.vue')['default']
+    AlternativeMainChart: typeof import('./src/components/AlternativeMainChart.vue')['default']
     AppFooter: typeof import('./src/components/AppFooter.vue')['default']
     BubbleChart: typeof import('./src/components/BubbleChart.vue')['default']
+    copy: typeof import('./src/components/MainChart copy.vue')['default']
     Loading: typeof import('./src/components/Loading.vue')['default']
     MainChart: typeof import('./src/components/MainChart.vue')['default']
     MainWrapper: typeof import('./src/components/MainWrapper.vue')['default']

@@ -25,7 +25,8 @@
         </v-card>
       </v-dialog>
       <!--  VEGA LITE CHART -->
-      <div id="vis">
+      <Loading v-if="loading"></Loading>
+      <div v-else id="vis">
       </div>
       <!-- MENU OPTIONS -->
       <v-bottom-navigation
@@ -39,24 +40,13 @@
             <v-card-subtitle class="d-flex justify-center">
               <span>Split</span>
             </v-card-subtitle>
-          <v-btn-toggle v-model="filterModel" shaped mandatory color="secondary">
-            <!-- <v-btn style="height: 35px;" depressed rounded @click="setFilter(filter)" v-for="filter in filterItems" :value="filter" flat> -->
-            <v-btn style="height: 35px;" depressed rounded v-for="filter in filterItems" :value="filter" flat>
-              <v-icon v-if="filter==`sentiment`">mdi-human</v-icon>
-              <v-icon v-else-if="filter==`none`">mdi-cancel</v-icon>
-              <v-icon v-else>mdi-flag-variant</v-icon>
-                <v-tooltip v-if="filter==`sentiment`"
+          <v-btn-toggle v-model="filterModel.value" shaped mandatory color="secondary">
+            <v-btn style="height: 35px;" depressed rounded v-for="filter in filterModel.filterItems" :value="filter" flat>
+              <v-icon>{{ filterModel.filterButtonIcons[filter] }}</v-icon>
+                <v-tooltip
                   activator="parent"
                   location="bottom"
-                >Sentiment</v-tooltip>
-                <v-tooltip v-if="filter==`none`"
-                  activator="parent"
-                  location="bottom"
-                >None</v-tooltip>
-                <v-tooltip v-if="filter==`lang`"
-                  activator="parent"
-                  location="bottom"
-                >Language</v-tooltip>
+                >{{ filterModel.filterButtonTooltip[filter] }}</v-tooltip>
             </v-btn>
           </v-btn-toggle>
         </v-card>
@@ -64,10 +54,9 @@
             <v-card-subtitle class="d-flex justify-center">
               <span>Chart Type</span>
             </v-card-subtitle>
-            <v-btn-toggle v-model="chartModel" shaped mandatory color="primary">
-              <v-btn style="height: 35px;" depressed rounded @click="setChart(chart)" v-for="chart in chartTypes" :value="chart" flat>
-                <v-icon v-if="chart!=`area`">mdi-chart-{{ chart }}</v-icon>
-                <v-icon v-else>mdi-chart-areaspline</v-icon>
+            <v-btn-toggle v-model="chartModel.value" shaped mandatory color="primary">
+              <v-btn style="height: 35px;" depressed rounded @click="setChart(chart)" v-for="chart in chartModel.chartTypes" :value="chart" flat>
+                <v-icon >{{chartModel.chartButtonIcons[chart]}}</v-icon>
                 <v-tooltip
                   activator="parent"
                   location="bottom"
@@ -79,27 +68,13 @@
             <v-card-subtitle class="d-flex justify-center">
               <span>Granularity</span>
             </v-card-subtitle>
-            <v-btn-toggle v-model="timeModel" shaped mandatory color="success">
-              <v-btn style="height: 35px;"  depressed rounded value='day' flat>
-                <span>D</span>
+            <v-btn-toggle v-model="timeModel.value" shaped mandatory color="success">
+              <v-btn style="height: 35px;" v-for="elem in timeModel.timeItems"  depressed rounded :value='elem' flat>
+                <span>{{elem[0].toUpperCase()}}</span>
                 <v-tooltip
                   activator="parent"
                   location="bottom"
-                >Day</v-tooltip>
-              </v-btn>
-              <v-btn style="height: 35px;"  depressed rounded value='week' flat>
-                <span>W</span>
-                <v-tooltip
-                  activator="parent"
-                  location="bottom"
-                >Week</v-tooltip>
-              </v-btn>
-              <v-btn style="height: 35px;"  depressed rounded value='month' flat>
-                <span>M</span>
-                <v-tooltip
-                  activator="parent"
-                  location="bottom"
-                >Month</v-tooltip>
+                >{{ elem[0].toUpperCase() + elem.slice(1) }}</v-tooltip>
               </v-btn>
             </v-btn-toggle>
           </v-card>
@@ -108,7 +83,7 @@
 
 
 <script>
-import vegaEmbed from 'vega-embed'
+import vegaEmbed, { vegaLite } from 'vega-embed'
 import { defineComponent, toRaw } from 'vue';
 import carbon101 from "@/models/carbon101";
 import googlechartsTheme from "@/models/googlecharts";
@@ -123,32 +98,44 @@ export default defineComponent({
     theme: function() { // watch it
         this.embed()
     },
-    timeModel: async function() {
+    'timeModel.value': async function() {
       await this.syncMyData()
     },
-    filterModel: async function() {
-      if (this.filterModel=='none'){
+    'filterModel.value': async function() {
+      if (this.filterModel.value=='none'){
         this.yourVlSpec.encoding.color.legend = null
       }else{
         this.yourVlSpec.encoding.color.legend = []
       }
-      this.yourVlSpec.encoding.order.field = this.filterModel
-      this.yourVlSpec.encoding.color.field = this.filterModel
-      this.yourVlSpec.encoding.color.title = this.filterModel
+      this.yourVlSpec.encoding.order.field = this.filterModel.value
+      this.yourVlSpec.encoding.color.field = this.filterModel.value
+      this.yourVlSpec.encoding.color.title = this.filterModel.value
       await this.syncMyData()
     }
   },
   data() {
     return{
-      filterModel: 'none',
-      filterItems: ['none', 'sentiment', 'lang'],
-      chartModel: 'bar',
-      chartTypes: ['bar', 'area', 'line'],
-      timeModel: 'week',
+      filterModel: {
+        value: 'none',
+        filterItems: ['none', 'sentiment', 'lang'],
+        filterButtonIcons: {'none': 'mdi-cancel', 'sentiment': 'mdi-human', 'lang': 'mdi-flag-variant'},
+        filterButtonTooltip: {'none': 'None', 'sentiment': 'Sentiment', 'lang': 'Language'}
+      },
+      chartModel: {
+        value: 'bar',
+        chartTypes: ['bar', 'area', 'line'],
+        chartButtonIcons: {'bar': 'mdi-chart-bar', 'area': 'mdi-chart-areaspline', 'line': 'mdi-chart-line'}
+      },
+      timeModel: {
+        value: 'week',
+        timeItems: ['day', 'week', 'month']
+      },
       days: [],
       modal: false,
       data: null,
+      loading: false,
       yourVlSpec: vegaModel,
+      embeddedModel: null,
     }
   },
   async created() {
@@ -156,10 +143,10 @@ export default defineComponent({
   },
   methods: {
     embed(){
-      let time = this.timeModel == 'day'? 1: this.timeModel=='week'? 7:31
-      vegaEmbed('#vis',
+      let time = this.timeModel.value == 'day'? 1: this.timeModel.value=='week'? 7:31
+      this.embeddedModel = vegaEmbed('#vis',
                 toRaw(this.yourVlSpec),
-                {"actions": false, config: this.theme=='darkTheme'? carbon101 : googlechartsTheme }
+                {"actions": false, config: this.theme=='darkTheme'? carbon101 : googlechartsTheme, renderer: "svg"}
               ).then(result => {
                     result.view.addEventListener('click', (event, item) => {
                       if (item!=null && item.datum!=null){
@@ -167,13 +154,13 @@ export default defineComponent({
                           return item.datum[key];
                         })
                         if (clicked.length>1 &&
-                            this.chartModel=='bar' &&
-                            this.filterModel=='none' &&
+                            this.chartModel.value=='bar' &&
+                            this.filterModel.value=='none' &&
                             item.mark.marktype!='path' &&
                             item.description.startsWith('created_at')
                           ){
                           let currentDate = toRaw(clicked[0]);
-                          if (this.timeModel=='month'){
+                          if (this.timeModel.value=='month'){
                             time = currentDate.getDate();
                           }
                           this.days = []
@@ -185,7 +172,8 @@ export default defineComponent({
                           this.modal = true
                         }
                         }
-                    });
+                      }
+                    );
                 }).catch(console.warn);
     },
     onResize() {
@@ -199,13 +187,15 @@ export default defineComponent({
       this.embed()
     },
     async syncMyData() {
-      let type = this.filterModel == 'sentiment'? 'all': ''
-      let lang = this.filterModel == 'lang'? 'all' : ''
-      this.data = (await axios.get(`/get_tweets?group=${this.timeModel}&type=${type}&lang=${lang}`)).data
+      let type = this.filterModel.value == 'sentiment'? 'all': ''
+      let lang = this.filterModel.value == 'lang'? 'all' : ''
+      this.data = (await axios.get(`/get_tweets?group=${this.timeModel.value}&type=${type}&lang=${lang}`)).data
       while (this.data==undefined){
           setTimeout(() => {
+            this.loading=true
           }, (500));
       }
+      this.loading=false
       this.yourVlSpec.data.values=this.data
       this.embed()
     },

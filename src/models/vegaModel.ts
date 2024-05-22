@@ -2,6 +2,7 @@ var vegaModel = {
   $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
   description: 'A simple bar chart with embedded data.',
   data: {
+    name: 'table',
     values: []
   },
     width: window.innerWidth/1.25 - 100,
