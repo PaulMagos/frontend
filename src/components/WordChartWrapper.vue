@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-row>
+    <v-row class="ml-2 mr-4">
       <v-col cols="9">
           <BubbleChart :bubbleMode='this.chart.bubbleMode' :theme='this.theme' :kindOfWords="wordsModel.source" ref="BubbleChart" :data="this.data" v-if="chart.chartType=='bubble'"></BubbleChart>
         <Transition>
@@ -12,6 +12,9 @@
         </Transition>
       </v-col>
       <v-col cols="3">
+        <v-row class="py-2">
+          <h3>Select source period of time</h3>
+        </v-row>
         <v-row>
           <v-menu
           ref="menu"
@@ -62,11 +65,39 @@
         </v-menu>
       </v-row>
       <v-row>
+        <h3>Frequency source: <b>{{ wordsModel.source[0].toUpperCase() + wordsModel.source.slice(1) }}</b></h3>
+      </v-row>
+      <v-row>
+          <v-btn-toggle mandatory :color="wordsModel.buttonColors[wordsModel.source]" v-model="wordsModel.source">
+            <v-btn v-for='elem in wordsModel.wordsTypes' :value="elem" :disabled="wordsModel.disabled[elem]">
+              <v-icon :color="wordsModel.source!=elem? wordsModel.buttonColors[elem]:''" size="x-large">{{wordsModel.wordsIcons[elem]}}</v-icon>
+              <v-tooltip
+                  activator="parent"
+                  location="bottom"
+              >{{ elem[0].toUpperCase() + elem.slice(1) }}</v-tooltip>
+            </v-btn>
+          </v-btn-toggle>
+      </v-row>
+      <v-row class="py-2">
         <v-select
+          class="mr-2"
           label="Language"
           :items="langModel.langItems"
           v-model="this.langModel.language"
         ></v-select>
+        <v-select
+          label="Filter Type"
+          :items="wordsModel.filter_Types"
+          v-model="wordsModel.filter_type"
+        ></v-select>
+        <!-- <v-select
+          label="Min frequency"
+          :items="[-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]"
+          v-model="wordsModel.filter_frequency"
+        ></v-select> -->
+      </v-row>
+      <v-row class="py-5">
+        <h3>Chart type: <b>{{ chart.chartType[0].toUpperCase() + chart.chartType.slice(1) }}</b></h3>
       </v-row>
       <v-row>
         <v-btn-toggle mandatory v-model="chart.chartType">
@@ -79,45 +110,64 @@
           </v-btn>
         </v-btn-toggle>
       </v-row>
+
+      <v-row  v-if="chart.chartType=='bubble'" class="py-2">
+        <h3>Split bubbles</h3>
+      </v-row>
       <v-row v-if="chart.chartType=='bubble'">
         <v-btn-toggle mandatory v-model="chart.bubbleMode.mode">
           <v-btn @click="$refs.BubbleChart.resetCenter()" :value=0>
             <v-icon>mdi-close</v-icon>
+            <v-tooltip
+                  activator="parent"
+                  location="bottom"
+            > Reset </v-tooltip>
           </v-btn>
           <v-btn @click="$refs.BubbleChart.splitByFrequency(chart.bubbleMode.min_frequency, color=chart.bubbleMode.color)" :value=1>
             <v-icon>mdi-vector-combine</v-icon>
+            <v-tooltip
+                  activator="parent"
+                  location="bottom"
+            > Split by Frequency</v-tooltip>
           </v-btn>
         </v-btn-toggle>
       </v-row>
-      <v-row v-if="chart.bubbleMode.mode==1">
-        <v-col>
-          <v-color-picker
-          v-model="chart.bubbleMode.color"
-          hide-inputs
-          :swatches="swatchesModel.swatches"
-          hide-canvas
-          show-swatches
-          ></v-color-picker>
-        </v-col>
-        <v-col>
-          <v-number-input
-          control-variant="split"
-          :min="-1"
-          v-model="chart.bubbleMode.min_frequency"
-        ></v-number-input>
-        </v-col>
+      <v-row v-if="chart.chartType=='bubble'" class="py-4" cols="10">
+        <h3 v-if="chart.bubbleMode.mode==1"> Words with frequency greater than {{ chart.bubbleMode.min_frequency }} are {{ chart.colorNames[chart.bubbleMode.color] }}</h3>
+        <v-expansion-panels v-if="chart.bubbleMode.mode==1" >
+          <v-expansion-panel>
+          <v-expansion-panel-title>
+            Color
+          </v-expansion-panel-title>
+          <v-expansion-panel-text>
+            <v-row class="align-center justify-center d-flex">
+              <v-color-picker
+              v-model="chart.bubbleMode.color"
+              hide-inputs
+              hide-sliders
+              :swatches="swatchesModel.swatches"
+              hide-canvas
+              show-swatches
+              ></v-color-picker>
+            </v-row>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+          <v-expansion-panel>
+          <v-expansion-panel-title>
+            Min Frequency
+          </v-expansion-panel-title>
+          <v-expansion-panel-text>
+            <v-row class="align-center justify-center d-flex">
+              <v-number-input
+              control-variant="split"
+              :min="-1"
+              v-model="chart.bubbleMode.min_frequency"
+            ></v-number-input>
+            </v-row>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
       </v-row>
-      <v-row>
-          <v-btn-toggle mandatory :color="wordsModel.buttonColors[wordsModel.source]" v-model="wordsModel.source">
-            <v-btn v-for='elem in wordsModel.wordsTypes' :value="elem" :disabled="wordsModel.disabled[elem]">
-              <v-icon :color="wordsModel.source!=elem? wordsModel.buttonColors[elem]:''" size="x-large">{{wordsModel.wordsIcons[elem]}}</v-icon>
-              <v-tooltip
-                  activator="parent"
-                  location="bottom"
-              >{{ elem[0].toUpperCase() + elem.slice(1) }}</v-tooltip>
-            </v-btn>
-          </v-btn-toggle>
-        </v-row>
     </v-col>
   </v-row>
 </div>
@@ -133,6 +183,7 @@ import WordCloud from './WordCloud.vue';
 import moment from 'moment'
 import StreamChart from './StreamChart.vue';
 import { VNumberInput } from 'vuetify/labs/VNumberInput'
+import { color } from 'd3';
 export default defineComponent({
   name: 'WordChartWrapper',
   components: {
@@ -148,6 +199,18 @@ export default defineComponent({
         const tmp = this.swatchesModel.swatches[3]
         this.swatchesModel.swatches[3] = this.swatchesModel.themedSwatch
         this.swatchesModel.themedSwatch = tmp
+      }
+    },
+    'wordsModel.filter_frequency': function (old_value, new_val){
+      if (old_value != new_val){
+        this.data=undefined
+        this.syncMyWords()
+      }
+    },
+    'wordsModel.filter_type': function (old_value, new_val){
+      if (old_value != new_val){
+        this.data=undefined
+        this.syncMyWords()
       }
     },
     'wordsModel.source': function (old_value, new_val){
@@ -177,6 +240,7 @@ export default defineComponent({
         chartIcon: ['mdi-chart-bubble', 'mdi-file-tree', 'mdi-weather-cloudy', 'mdi-view-stream'],
         animation: ['', '', '', ''],
         bubbleMode: {color: '#FFA700', min_frequency: 5, mode: 0},
+        colorNames: {'#FFA700': 'Orange', '#14202B': 'DarkBlue', '#0087F6': 'Cyan', '#FF0000': 'Red'}
       },
       // Language filter model which contains all the informations for changing the source language
       langModel: {
@@ -197,7 +261,10 @@ export default defineComponent({
         wordsTypes: ['words', 'hashtags', 'images', 'videos'],
         wordsIcons: {'words': 'mdi-file-word-box-outline', 'hashtags': 'mdi-pound-box-outline', 'images': 'mdi-image-outline', 'videos': 'mdi-video-outline'},
         disabled: {'words': false, 'hashtags': false, 'images': false, 'videos': false},
-        buttonColors: {'words': 'secondary', 'hashtags': 'info', 'images': 'success', 'videos': 'error'}
+        buttonColors: {'words': 'secondary', 'hashtags': 'info', 'images': 'success', 'videos': 'error'},
+        filter_type: 'tf_idf',
+        filter_Types: ['none', 'tf_idf'],
+        filter_frequency: -1,
       },
 
       // Colors for slitted bubble chart
@@ -209,8 +276,6 @@ export default defineComponent({
           ['#14202B'],
         ],
       },
-      filter_min: 0,
-      filter_type: 'tf_idf',
       // Menu
       menu: false,
       data: null,
@@ -241,10 +306,12 @@ export default defineComponent({
       this.check_presence()
       this.getSettedDays()
       const source = this.wordsModel.source
+      const filter_T = this.wordsModel.filter_type
+      const min_freq = this.wordsModel.filter_frequency
       const min_day = this.format_date(this.daysModel.local_days[0])
       const max_day = this.format_date(this.daysModel.local_days[this.daysModel.local_days.length-1] || this.daysModel.local_days[0])
-      this.data = (await axios.get(`/get_words?source=${source}&from_=${min_day}&to_=${max_day}&lang=${this.langModel.language}`)).data
-      this.streamdata = (await axios.get(`/get_words?source=${source}&from_=${min_day}&to_=${max_day}&lang=${this.langModel.language}&aggregate=false&pivot=true`)).data
+      this.data = (await axios.get(`/get_words?min_frequency=${min_freq}&filter_type=${filter_T}&source=${source}&from_=${min_day}&to_=${max_day}&lang=${this.langModel.language}`)).data
+      this.streamdata = (await axios.get(`/get_words?min_frequency=${min_freq}&filter_type=${filter_T}&source=${source}&from_=${min_day}&to_=${max_day}&lang=${this.langModel.language}&aggregate=false&pivot=true`)).data
       var langs = (await axios.get(`/get_langs_words?source=${source}`)).data
 
 

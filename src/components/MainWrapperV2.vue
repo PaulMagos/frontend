@@ -1,6 +1,6 @@
 <template>
     <v-card :theme="theme" elevation="0">
-        <MainChart ref="main_chart" :theme="theme"></MainChart>
+      <AlternativeMainChart ref="main_chart" :theme="theme"></AlternativeMainChart>
     </v-card>
 </template>
 
@@ -8,7 +8,7 @@
 import { defineComponent } from 'vue';
 
 export default defineComponent({
-  name: 'MainWrapper',
+  name: 'MainWrapperV2',
   props: {
     theme: String,
   },

@@ -7,7 +7,6 @@
 <script lang="ts">
 import Loading from './Loading.vue'
 import { defineComponent, toRaw } from 'vue'
-import axios from 'axios'
 import * as d3 from "d3";
 
 

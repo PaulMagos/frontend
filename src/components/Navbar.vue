@@ -3,6 +3,15 @@
     <v-app-bar-title><v-icon @click="this.goToHome()" color="cyan">mdi-chart-arc</v-icon></v-app-bar-title>
       <v-icon @click="$emit('toggleTheme')" value="about"> mdi-theme-light-dark </v-icon>
       <div class="px-2"></div>
+      <v-btn-toggle v-model="mainV">
+        <v-btn @click="this.goToV1" value='V1'>
+            V1
+        </v-btn>
+        <v-btn @click="this.goToV2" value='V2'>
+            V2 (alpha)
+        </v-btn>
+      </v-btn-toggle>
+      <div class="px-2"></div>
       <v-btn @click="this.goToAbout" value="about">
         <v-icon>mdi-heart</v-icon>
         <span>About</span>
@@ -20,6 +29,7 @@ export default defineComponent({
   data () {
     return {
       drawer: null,
+      mainV: 'V1',
     }
   },
   methods: {
@@ -28,6 +38,12 @@ export default defineComponent({
     },
     goToAbout() {
       this.$router.push('/about')
+    },
+    goToV1() {
+      this.goToHome()
+    },
+    goToV2() {
+      this.$router.push('/V2')
     },
   },
 })

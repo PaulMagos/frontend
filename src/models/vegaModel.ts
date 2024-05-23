@@ -9,9 +9,11 @@ var vegaModel = {
     height: window.innerHeight/1.8 - 60,
     mark: {
       type: 'bar',
-      point: false,
+      // point: false,
       cornerRadiusEnd: 4,
       tooltip: true,
+      stroke: "black",
+      cursor: "pointer"
     },
     selection: {
       series: {
@@ -21,8 +23,17 @@ var vegaModel = {
         on: "dbclick",
         bind: "legend",
       },
+      highlight: {
+        type: 'point',
+        on: 'pointerover'
+      }
     },
     encoding: {
+      tooltip: [
+        {field: "value", type: "quantitative", title: 'Tweets'},
+        {field: "sentiment", type: "nominal", title: 'Sentiment'},
+        {field: "lang", type: "nominal", title: 'Language'}
+      ],
       x: {
         field: "created_at",
         type: "ordinal",
@@ -48,6 +59,16 @@ var vegaModel = {
           ]
         },
         legend: []
+      },
+      strokeWidth: {
+        condition: [
+          {
+            param: "highlight",
+            empty: false,
+            value: 4
+          }
+        ],
+        value: 0
       },
       color: {
         legend: null,

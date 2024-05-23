@@ -34,7 +34,7 @@ export default defineComponent({
   },
   methods:{
     get_width(){
-      return window.innerWidth/12*9 -20
+      return window.innerWidth/12*9 - 50
     },
     get_height(){
       return window.innerHeight/1.15

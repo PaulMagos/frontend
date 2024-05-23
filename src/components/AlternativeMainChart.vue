@@ -25,14 +25,24 @@
         </v-card>
       </v-dialog>
       <!--  VEGA LITE CHART -->
-      <v-col>
+      <div>
         <v-row>
-          <div id="vis"></div>
+          <v-card>
+            <v-card-title>
+               <h3>Tweets downloaded in total: <span>{{ total_tweets }}</span></h3>
+            </v-card-title>
+            <v-card-subtitle>These are all the tweets related to Lampedus from <b>{{ first_day }}</b> to <b>{{ last_day }}</b></v-card-subtitle>
+          </v-card>
+          <v-col>
+            <v-row>
+              <div id="visV2"></div>
+            </v-row>
+            <v-row>
+              <div id="slider-range"></div>
+            </v-row>
+          </v-col>
         </v-row>
-        <v-row>
-          <div id="slider-range"></div>
-        </v-row>
-      </v-col>
+      </div>
       <!-- MENU OPTIONS -->
       <v-bottom-navigation
         location="bottom"
@@ -102,7 +112,6 @@ export default defineComponent({
   watch: {
     theme: function() { // watch it
         this.embed()
-        this.embedSlide()
     },
     'timeModel.value': async function() {
       await this.syncMyData()
@@ -131,6 +140,10 @@ export default defineComponent({
       days: [],
       modal: false,
       data: null,
+      total_tweets: 0,
+      first_day: 1000000000000,
+      last_day: 0,
+      val: null,
       svg: null,
       gRange: null,
       loading: false,
@@ -194,6 +207,19 @@ export default defineComponent({
           .call(axis)
       }
 
+      if(this.gRange.select(".myXAxis").empty()){
+        this.gRange.append("g")
+          .attr('class', 'myXAxis')
+          .attr("transform", `translate(0, 0)`)
+          .call(axis)
+      }else{
+        this.gRange.select(".myXAxis")
+          .transition()
+          .duration(500)
+          .attr("transform", `translate(0, 0)`)
+          .call(axis)
+      }
+
       var max = 0
       data.forEach(elem => {
         if (max<elem.end){
@@ -203,6 +229,9 @@ export default defineComponent({
       const y = d3.scaleLinear()
         .domain([0, max])
         .range([ this.get_height()-margin.bottom, 0]);
+      const yBrush = d3.scaleLinear()
+        .domain([0, max])
+        .range([ 90, 0]);
 
       if(this.svg.select(".myYaxis").empty()){
         this.svg.append("g")
@@ -215,9 +244,20 @@ export default defineComponent({
           .call(d3.axisLeft(y))
       }
 
+      if(this.gRange.select(".myYaxis").empty()){
+        this.gRange.append("g")
+          .attr('class', 'myYaxis')
+          .call(d3.axisLeft(yBrush));
+      }else{
+        this.gRange.select(".myYaxis")
+          .transition()
+          .duration(500)
+          .call(d3.axisLeft(yBrush))
+      }
+
 
       const height = this.get_height()-margin.bottom
-      function enterAnim(enter){
+      function enterAnim(enter, x, y){
         enter
           .append('rect')
           .transition()
@@ -246,7 +286,7 @@ export default defineComponent({
         }
       }
 
-      function updateAnim(svg){
+      function updateAnim(svg, x, y){
         svg
           .transition()
           .duration(500)
@@ -267,7 +307,7 @@ export default defineComponent({
         }
       }
 
-      function removeAnim(exit){
+      function removeAnim(exit, x, y){
         exit
           .transition().duration(800)
           .attr("y", d => y(0))
@@ -277,7 +317,7 @@ export default defineComponent({
 
 
 
-      const tooltip = d3.select("#vis")
+      const tooltip = d3.select("#visV2")
         .append("div")
           .style("opacity", 0)
           .attr("class", "tooltip")
@@ -335,23 +375,23 @@ export default defineComponent({
         .selectAll('rect')
         .data(data, d => d.created_at)
         .join(
-          enter => enterAnim(enter),
-          update => updateAnim(update),
-          exit => removeAnim(exit)
+          enter => enterAnim(enter, x, y),
+          update => updateAnim(update, x, y),
+          exit => removeAnim(exit, x, y)
         )
-    },
-    embedSlide(){
-      this.gRange.transition().duration(500).call(sliderBottom()
-          .min(d3.min(this.data, d => d.created_at))
-          .max(d3.max(this.data, d => d.created_at))
-          .width(this.get_width()-margin.right*7)
-          .tickFormat(d3.timeFormat('%Y-%B-%d'))
-          .default([d3.min(this.data, d => d.created_at), d3.max(this.data, d => d.created_at)])
-          .fill(this.theme == 'darkTheme'? 'white': '#14202B')
-          .on('onchange', val => {
-            const data_ = this.data.filter(d => d.created_at >= val[0] && d.created_at <= val[1])
-            setTimeout(() =>{this.embed(data_)}, 100)
-          }))
+
+      this.gRange.selectAll("rect")
+      .datum(data, d => d.created_at)
+      .join(
+        enter => enterAnim(enter, x, yBrush),
+        update => updateAnim(update, x, yBrush),
+        exit => removeAnim(exit, x, yBrush),
+      )
+
+      // this.gRange
+      //   .append("g")
+      //   .attr("class", "brush")
+      //   .call(d3.brushX().on("brush", console.log('brush')));
     },
     openModal(d){
         let currentDate = new Date(d.created_at);
@@ -368,14 +408,14 @@ export default defineComponent({
         this.modal = true
     },
     onResize() {
-      d3.select("#vis").select('svg')
+      d3.select("#visV2").select('svg')
         .attr("width", this.get_width())
         .attr("height", this.get_height());
       d3.select('#slider-range')
         .select('svg')
         .attr('width', this.get_width())
+        .attr("height", 100);
       this.embed()
-      this.embedSlide()
     },
     setChart() {
       this.embed()
@@ -391,10 +431,9 @@ export default defineComponent({
       }
       this.loading=false
       this.embed()
-      this.embedSlide()
     },
     initialize(){
-      this.svg = d3.select("#vis")
+      this.svg = d3.select("#visV2")
         .append("svg")
           .attr("width", this.get_width())
           .attr("height", this.get_height())
@@ -417,6 +456,11 @@ export default defineComponent({
     this.$nextTick(async () => {
       window.addEventListener('resize', this.onResize)
       await this.syncMyData()
+      this.total_tweets = (this.data.map(elem => elem.value)).reduce((partialSum, a) => partialSum + a, 0)
+      this.last_day = this.data.map(elem=> elem.created_at).reduce((max, a) => max<a? a:max, 0)
+      this.first_day = this.data.map(elem=> elem.created_at).reduce((min, a) => min>a? a:min, this.last_day)
+      this.first_day = new Date(this.first_day).toDateString()
+      this.last_day = new Date(this.last_day).toDateString()
     })
 
   },

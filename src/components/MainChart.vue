@@ -25,8 +25,17 @@
         </v-card>
       </v-dialog>
       <!--  VEGA LITE CHART -->
-      <Loading v-if="loading"></Loading>
-      <div v-else id="vis">
+      <div>
+        <v-row>
+          <v-col>
+            <h1>Tweets downloaded in total: <span>{{ total_tweets }}</span></h1>
+            <p>These are all the tweets related to Lampedusa from <b>{{ first_day }}</b> to <b>{{ last_day }}</b></p>
+          </v-col>
+        </v-row>
+        <v-row>
+          <div id="vis" cols="10">
+          </div>
+        </v-row>
       </div>
       <!-- MENU OPTIONS -->
       <v-bottom-navigation
@@ -103,9 +112,11 @@ export default defineComponent({
     },
     'filterModel.value': async function() {
       if (this.filterModel.value=='none'){
+        this.yourVlSpec.mark.cursor = 'pointer'
         this.yourVlSpec.encoding.color.legend = null
       }else{
         this.yourVlSpec.encoding.color.legend = []
+        this.yourVlSpec.mark.cursor = ''
       }
       this.yourVlSpec.encoding.order.field = this.filterModel.value
       this.yourVlSpec.encoding.color.field = this.filterModel.value
@@ -131,6 +142,9 @@ export default defineComponent({
         timeItems: ['day', 'week', 'month']
       },
       days: [],
+      total_tweets: 0,
+      first_day: 1000000000000,
+      last_day: 0,
       modal: false,
       data: null,
       loading: false,
@@ -207,6 +221,11 @@ export default defineComponent({
     this.$nextTick(async () => {
       window.addEventListener('resize', this.onResize)
       await this.syncMyData()
+      this.total_tweets = (this.data.map(elem => elem.value)).reduce((partialSum, a) => partialSum + a, 0)
+      this.last_day = this.data.map(elem=> elem.created_at).reduce((max, a) => max<a? a:max, 0)
+      this.first_day = this.data.map(elem=> elem.created_at).reduce((min, a) => min>a? a:min, this.last_day)
+      this.first_day = new Date(this.first_day).toDateString()
+      this.last_day = new Date(this.last_day).toDateString()
     })
   },
 })
