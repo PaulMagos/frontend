@@ -1,23 +1,51 @@
 <template>
-  <v-card :theme="this.theme" elevation="0">
-    <div class="py-10"></div>
-    <v-card-title>
-        About Us
-    </v-card-title>
-      <v-img
+  <div  class="py-10">
+  <v-row class="py-10 ml-4 mr-4">
+    <v-card
+    id='mycard'
+    class="mx-auto"
+    :max-width="width"
+    subtitle="AI Student"
+    >
+    <template v-slot:prepend>
+        <v-img
         class="align-end text-white profile-picture"
         :src="image"
+        width="100"
+        height="100"
         cover
-      >
-      <v-card-title>{{ name }}</v-card-title>
-      </v-img>
-      <p>{{ description }}</p>
+        ></v-img>
+    </template>
+    <template v-slot:title>
+      <h1 class="font-weight-black">{{ name }}</h1>
+    </template>
+    <template v-slot:subtitle>
+      <h1 class="font-weight-black">AI Student</h1>
+    </template>
 
-    <ul class="social-links">
-       <li><a :href="linkedin" target="_blank"><i class="fa fa-linkedin" aria-hidden="true"></i> LinkedIn</a></li>
-       <li><a :href="github" target="_blank"><i class="fa fa-github" aria-hidden="true"></i> Github</a></li>
-     </ul>
+    <v-card-text class="pt-4" elevation="10">
+      {{description}}
+    </v-card-text>
+    <v-card-actions>
+      <v-btn :href='mail'>
+        Send an Email
+        <v-icon>mdi-send</v-icon>
+      </v-btn>
+      <div class="px-2"></div>
+      <v-divider></v-divider>
+      <v-btn :href="linkedin" target="_blank">
+        <v-icon>mdi-linkedin</v-icon>
+        Linkedin
+      </v-btn>
+      <v-btn :href="github" target="_blank">
+        <v-icon>mdi-github</v-icon>
+        Github
+      </v-btn>
+    </v-card-actions>
   </v-card>
+</v-row>
+
+  </div>
 </template>
 
 <script lang="ts">
@@ -28,15 +56,33 @@ export default defineComponent({
   props: {
     theme: String,
   },
+  method:{
+    get_width(){
+      return this.width
+    },
+    onResize(){
+      this.width = window.innerWidth/1.2
+    }
+  },
+  beforeDestroy() {
+    window.removeEventListener('resize', this.onResize);
+  },
+  async mounted() {
+    this.$nextTick(async () => {
+      window.addEventListener('resize', this.onResize)
+    })
+  },
   data() {
     return {
+      mail: 'mailto:paulmagos@icloud.com',
+      width: window.innerWidth/1.2,
       image: 'https://media.licdn.com/dms/image/D4D03AQG_IIKN8X4eWA/profile-displayphoto-shrink_800_800/0/1709633416720?e=1720051200&v=beta&t=0IKD3ciO4x0rZ-qM_REna1uRHwZqY8-1nz1pWyMeV2Y', // Replace with your profile picture URL
       name: 'Paul Magos', // Replace with your name
       linkedin: 'https://www.linkedin.com/in/paulmagos/',
       short_bio: 'Research Fellow & Master\'s Student in Computer Science - Artificial Intelligence',
       github: 'https://github.com/PaulMagos',
       description:
-        'As a Research Fellow at Università di Pisa, I delve into projects at the intersection of cutting-edge technologies and impactful research. My expertise spans tweet retrieval, text/sentiment analysis, image tagging, and video transcription. Leveraging my skills in software engineering, data analysis, and machine learning, I craft innovative solutions and develop robust web platforms to disseminate research findings effectively. In pursuit of academic excellence, I am concurrently pursuing a Master\'s degree in Computer Science - Artificial Intelligence at Università di Pisa. This academic journey has equipped me with a comprehensive understanding of AI domains, including natural language processing, computer vision, deep learning, and reinforcement learning. I am driven by a fervent desire to continuously expand my knowledge and embrace emerging technologies to propel my research endeavors forward. With a profound commitment to leveraging AI for societal benefit, I am dedicated to advancing the frontiers of artificial intelligence and fostering its ethical applications. Collaborate with me to explore the transformative potential of AI in addressing real-world challenges.',
+        'As a Student of Artificial Intelligence at Università di Pisa, I delve into projects at the intersection of cutting-edge technologies and impactful research. Leveraging my skills in software engineering, data analysis, and machine learning, I craft innovative solutions and develop robust web platforms to disseminate research findings effectively. My academic journey has equipped me with a comprehensive understanding of AI domains, including natural language processing, computer vision, deep learning, and reinforcement learning. I am driven by a fervent desire to continuously expand my knowledge and embrace emerging technologies to propel my research endeavors forward. Collaborate with me to explore the transformative potential of AI in addressing real-world challenges.',
     };
   },
 })
@@ -44,31 +90,10 @@ export default defineComponent({
 
 
 <style>
-
 .profile-picture {
   width: 200px;
   height: 200px;
   border-radius: 5%;
   margin-bottom: 15px;
-}
-
-.social-links {
-  list-style: none;
-  margin-top: 20px;
-}
-
-.social-links li {
-  display: inline-block;
-  margin-right: 10px;
-}
-
-.social-links a {
-  text-decoration: none;
-  color: #337ab7;
-}
-
-.social-links i {
-  font-size: 18px;
-  margin-right: 5px;
 }
 </style>
