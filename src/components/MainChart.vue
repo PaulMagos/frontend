@@ -134,7 +134,7 @@ export default defineComponent({
       },
       chartModel: {
         value: 'bar',
-        chartTypes: ['bar', 'area', 'line'],
+        chartTypes: ['bar', 'area'],
         chartButtonIcons: {'bar': 'mdi-chart-bar', 'area': 'mdi-chart-areaspline', 'line': 'mdi-chart-line'}
       },
       timeModel: {

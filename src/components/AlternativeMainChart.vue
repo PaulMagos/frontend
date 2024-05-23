@@ -24,7 +24,7 @@
           <WordChartWrapper :theme="this.theme" :days="this.days"></WordChartWrapper>
         </v-card>
       </v-dialog>
-      <!--  VEGA LITE CHART -->
+      <!--  CHART -->
       <div>
         <v-row>
           <v-card>
@@ -65,7 +65,7 @@
             </v-btn>
           </v-btn-toggle>
         </v-card>
-        <v-card elevation="0" class="px-2">
+        <!-- <v-card elevation="0" class="px-2">
             <v-card-subtitle class="d-flex justify-center">
               <span>Chart Type</span>
             </v-card-subtitle>
@@ -78,7 +78,7 @@
                 >{{ chart[0].toUpperCase() + chart.slice(1) }}</v-tooltip>
               </v-btn>
             </v-btn-toggle>
-          </v-card>
+          </v-card> -->
           <v-card elevation="0" class="px-2">
             <v-card-subtitle class="d-flex justify-center">
               <span>Granularity</span>
