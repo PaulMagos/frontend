@@ -82,7 +82,7 @@ export default defineComponent({
         .domain([-max, max])
         .range([ this.get_height()*0.7, 0]);
 
-      const z = d3.interpolateCool;
+      const z = d3.scaleOrdinal(d3.schemePaired).domain(keys);
       // Area generator
       var area = d3.area()
         .x(function(d) {return x(d.data.created_at);})
@@ -154,7 +154,7 @@ export default defineComponent({
           .call(g =>
             g
             .attr("d", area)
-            .attr("fill", () => z(Math.random()))
+            .attr("fill", (d) => z(d.key))
           )
           .on("mouseover", showTooltip )
           .on("mousemove", moveTooltip )
@@ -166,7 +166,7 @@ export default defineComponent({
             g
             .transition().duration(1500)
             .attr("d", area)
-            .attr("fill", () => z(Math.random()))
+            .attr("fill", (d) => z(d.key))
           )
           .on("mouseover", showTooltip )
           .on("mousemove", moveTooltip )
