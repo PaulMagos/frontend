@@ -143,7 +143,7 @@ export default defineComponent({
       },
       days: [],
       total_tweets: 0,
-      first_day: 1000000000000,
+      first_day: 0,
       last_day: 0,
       modal: false,
       data: null,
