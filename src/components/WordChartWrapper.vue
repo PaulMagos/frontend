@@ -244,7 +244,7 @@ export default defineComponent({
       },
       // Language filter model which contains all the informations for changing the source language
       langModel: {
-        language: 'Italian',
+        language: 'English',
         langItems: [],
       },
       // Timeline filter model which contains all the informations for changing the days from which we want to see the words frequency
@@ -258,11 +258,11 @@ export default defineComponent({
       // Words model which contains all the informations for changing the source of the words and frequencies, and also buttons information (e.g. colors)
       wordsModel: {
         source: 'words',
-        wordsTypes: ['words', 'hashtags', 'images', 'videos'],
+        wordsTypes: ['words', 'hashtags', 'images'],
         wordsIcons: {'words': 'mdi-file-word-box-outline', 'hashtags': 'mdi-pound-box-outline', 'images': 'mdi-image-outline', 'videos': 'mdi-video-outline'},
         disabled: {'words': false, 'hashtags': false, 'images': false, 'videos': false},
         buttonColors: {'words': 'secondary', 'hashtags': 'info', 'images': 'success', 'videos': 'error'},
-        filter_type: 'tf_idf',
+        filter_type: 'none',
         filter_Types: ['none', 'tf_idf'],
         filter_frequency: -1,
       },
